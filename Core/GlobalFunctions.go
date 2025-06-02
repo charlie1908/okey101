@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// Test
 // OkeyTaşınıBelirle, gösterge taşına göre gerçek okey taşını döner
 func DetermineOkeyTile(indicator Model.Tile) Model.Tile {
 	nextNumber := indicator.Number + 1
