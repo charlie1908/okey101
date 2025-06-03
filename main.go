@@ -9,11 +9,12 @@ import (
 
 // TIP <p>To run your code, right-click the code and select <b>Run</b>.</p> <p>Alternatively, click
 // the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.</p>
-const PlayerCount int = 4
-const StartTileContPerPlayer int = 21
+const playerCount int = 4
+const startTileContPerPlayer int = 21
+const userIdLength = 12
 
 func main() {
-	playerList := make([]Model.Player, PlayerCount)
+	playerList := make([]Model.Player, playerCount)
 
 	tiles := Core.CreateFullTileSet()
 	fmt.Println("Toplam taş:", len(tiles)) // 106 olmalı
@@ -80,7 +81,7 @@ func main() {
 			start = 1
 		}
 		tb := Core.TileBag(player.TileBag) // []Model.Tile → TileBag
-		Core.ShowPlayerTiles(&tb, player.Name, StartTileContPerPlayer+start)
+		Core.ShowPlayerTiles(&tb, player.Name, startTileContPerPlayer+start)
 	}
 	//Core.ShowPlayerTiles(player1, "Player 1", 22)
 	//Core.ShowPlayerTiles(player2, "Player 2", 21)
@@ -90,19 +91,19 @@ func main() {
 }
 
 func dealUserTiles(playerList []Model.Player, tiles Core.TileBag) {
-	for i := range PlayerCount {
+	for i := range playerCount {
 		start := 0
 		if i == 0 {
 			start = 1
 		}
-		uid, err := Core.GenerateID(12)
+		uid, err := Core.GenerateID(userIdLength)
 		if err != nil {
 
 		}
 		playerList[i] = Model.Player{
 			ID:       i,
 			Name:     fmt.Sprintf("Player %d", i+1),
-			TileBag:  *Core.ShowPlayerTiles(&tiles, "", StartTileContPerPlayer+start),
+			TileBag:  *Core.ShowPlayerTiles(&tiles, fmt.Sprintf("Player %d", i+1), startTileContPerPlayer+start),
 			UniqueId: uid,
 		}
 	}
