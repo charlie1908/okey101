@@ -5,6 +5,15 @@ import (
 	"sort"
 )
 
+// UI dan gelecek dizilim listesinin tamamının validasyonu
+func IsValidGroups(tiles [][]Model.Tile) bool {
+	isValid := true
+	for _, per := range tiles {
+		isValid = isValid && IsValidGroupOrRun(per)
+	}
+	return isValid
+}
+
 // Kendisine gelen tas dizilimlerinin Ayni Sayi Farkjli Renk (Group) veya Sirali Ayni Renk (RUN) olma durumuna bakma.
 func IsValidGroupOrRun(tiles []Model.Tile) bool {
 	if len(tiles) < 3 {
