@@ -212,6 +212,7 @@ func ShowPlayerTiles(tiles *TileBag, name string, topCount int) *TileBag {
 	return player
 }
 
+// Bunun yerine en usttekini de alabiliriz. Ben Random secmeyi daha guvenli buldum.
 func (tiles *TileBag) GetRandomIndicatorFromTiles() Model.Tile {
 	// Joker olmayan taşları filtrele
 	validTiles := make([]Model.Tile, 0)
