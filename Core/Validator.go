@@ -235,7 +235,9 @@ func CalculateTileScore(tile Model.Tile, index int, tiles []Model.Tile, isSequen
 				return t.Number
 			}
 		}
-		return 0
+		//return 0
+		//Butun taslar OK ise kendi degerini alir..
+		return tile.Number
 	}
 	// Sequence (run) için
 	// Aynı renkten artan sıra olduğu için, en küçük number'dan başlayarak index ile artırılır.
@@ -301,4 +303,35 @@ func CanOpenTiles(opened [][]Model.Tile) bool {
 		}
 	}
 	return totalScore >= 101
+}
+
+// Açılan taşlar arasında 5 çift var mı?
+func HasAtLeastFivePairs(opened [][]Model.Tile) bool {
+	pairCount := 0
+
+	for _, group := range opened {
+		if len(group) == 2 {
+			tile1, tile2 := group[0], group[1]
+
+			// Okey olan taşların değerini bulmak için CalculateTileScore kullanıyoruz
+			score1 := CalculateTileScore(tile1, 0, group, false)
+			score2 := CalculateTileScore(tile2, 1, group, false)
+
+			// Aynı sayı mı?
+			if score1 == score2 {
+				// Aynı renk mi ya da okey (joker) taşı var mı?
+				// Eğer ikisi de okey ise kabul edilir.
+				// Ya da renkleri aynı ise kabul edilir.
+				if tile1.IsOkey || tile2.IsOkey || tile1.Color == tile2.Color {
+					pairCount++
+				} else {
+					return false
+				}
+			} else {
+				return false
+			}
+		}
+	}
+
+	return pairCount >= 5
 }
