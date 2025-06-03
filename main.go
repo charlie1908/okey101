@@ -17,7 +17,7 @@ func main() {
 
 	tiles := Core.CreateFullTileSet()
 	fmt.Println("Toplam taş:", len(tiles)) // 106 olmalı
-	DealUserTiles(playerList, tiles)
+	dealUserTiles(playerList, tiles)
 	//var player1 = Core.ShowPlayerTiles(&tiles, "Player 1", 22)
 	//var player2 = Core.ShowPlayerTiles(&tiles, "Player 2", 21)
 	indicatorTile := tiles.GetRandomIndicatorFromTiles()
@@ -89,7 +89,7 @@ func main() {
 
 }
 
-func DealUserTiles(playerList []Model.Player, tiles Core.TileBag) {
+func dealUserTiles(playerList []Model.Player, tiles Core.TileBag) {
 	for i := range PlayerCount {
 		start := 0
 		if i == 0 {
