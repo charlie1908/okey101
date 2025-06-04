@@ -9,6 +9,13 @@ import (
 	"strings"
 )
 
+const TileCountPerColor int = 13
+const JokerCount int = 2
+
+type TileBag []Model.Tile
+
+const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
 // OkeyTaşınıBelirle, gösterge taşına göre gerçek okey taşını döner
 func DetermineOkeyTile(indicator Model.Tile) Model.Tile {
 	nextNumber := indicator.Number + 1
@@ -108,8 +115,8 @@ func CreateFullTileSet() TileBag {
 	}
 
 	for _, color := range colors {
-		for number := 1; number <= 13; number++ {
-			for i := 0; i < 2; i++ { // Her taştan 2 adet
+		for number := 1; number <= TileCountPerColor; number++ {
+			for i := 1; i <= 2; i++ { // Her taştan 2 adet
 				tiles = append(tiles, Model.Tile{
 					ID:      id,
 					Number:  number,
@@ -123,7 +130,7 @@ func CreateFullTileSet() TileBag {
 	}
 
 	// 2 adet sahte okey taşı (renksiz, numbersız)
-	for i := 0; i < 2; i++ {
+	for i := 1; i <= JokerCount; i++ {
 		tiles = append(tiles, Model.Tile{
 			ID:      id,
 			Number:  0,
@@ -155,6 +162,19 @@ func ShuffleTilesSecure(tiles []Model.Tile) TileBag {
 	return shuffled
 }
 
+// ID Generator
+func GenerateID(length int) (string, error) {
+	result := make([]byte, length)
+	for i := 0; i < length; i++ {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			return "", err
+		}
+		result[i] = charset[num.Int64()]
+	}
+	return string(result), nil
+}
+
 // cryptoRandInt returns a random int between 0 and max-1 using crypto/rand
 func cryptoRandInt(max int) (int, error) {
 	nBig, err := rand.Int(rand.Reader, big.NewInt(int64(max)))
@@ -163,8 +183,6 @@ func cryptoRandInt(max int) (int, error) {
 	}
 	return int(nBig.Int64()), nil
 }
-
-type TileBag []Model.Tile
 
 func (tiles *TileBag) GetTiles(count int) *TileBag {
 	// örnek implementasyon
@@ -181,7 +199,7 @@ func (tiles *TileBag) GetTiles(count int) *TileBag {
 func ShowPlayerTiles(tiles *TileBag, name string, topCount int) *TileBag {
 	player := tiles.GetTiles(topCount)
 
-	fmt.Println(name)
+	fmt.Println(name + ":")
 	fmt.Println(strings.Repeat("-", 30))
 
 	for i, tile := range *player {
