@@ -7,14 +7,20 @@ import (
 	"strings"
 )
 
-//TIP <p>To run your code, right-click the code and select <b>Run</b>.</p> <p>Alternatively, click
+// TIP <p>To run your code, right-click the code and select <b>Run</b>.</p> <p>Alternatively, click
 // the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.</p>
+const playerCount int = 4
+const startTileContPerPlayer int = 21
+const userIdLength = 12
 
 func main() {
+	playerList := make([]Model.Player, playerCount)
+
 	tiles := Core.CreateFullTileSet()
 	fmt.Println("Toplam taş:", len(tiles)) // 106 olmalı
-	var player1 = Core.ShowPlayerTiles(&tiles, "Player 1:", 22)
-	var player2 = Core.ShowPlayerTiles(&tiles, "Player 2:", 21)
+	dealUserTiles(playerList, tiles)
+	//var player1 = Core.ShowPlayerTiles(&tiles, "Player 1", 22)
+	//var player2 = Core.ShowPlayerTiles(&tiles, "Player 2", 21)
 	indicatorTile := tiles.GetRandomIndicatorFromTiles()
 	fmt.Println("Indicator Tile:")
 	fmt.Println(strings.Repeat("-", 30))
@@ -33,36 +39,72 @@ func main() {
 	fmt.Printf("Kalan taş sayısı: %d\n", len(tiles))
 
 	tiles.MarkOkeyTiles(indicatorTile)
-	player1.MarkOkeyTiles(indicatorTile)
-	player2.MarkOkeyTiles(indicatorTile)
+	for _, player := range playerList {
+		tb := Core.TileBag(player.TileBag) // []Model.Tile → TileBag
+		(&tb).MarkOkeyTiles(indicatorTile)
 
-	fmt.Println("Player 1:")
-	for i, tile := range *player1 {
-		colorName := Core.GetEnumName(Core.ColorEnum, tile.Color)
-		fmt.Printf("%d-) ID: %d, %s %d, Joker: %v Okey: %v\n", i+1, tile.ID, colorName, tile.Number, tile.IsJoker, tile.IsOkey)
+		fmt.Println(player.Name)
+		for i, tile := range player.TileBag {
+			colorName := Core.GetEnumName(Core.ColorEnum, tile.Color)
+			fmt.Printf("%d-) ID: %d, %s %d, Joker: %v Okey: %v\n", i+1, tile.ID, colorName, tile.Number, tile.IsJoker, tile.IsOkey)
+		}
 	}
-	for i, tile := range *player2 {
-		colorName := Core.GetEnumName(Core.ColorEnum, tile.Color)
-		fmt.Printf("%d-) ID: %d, %s %d, Joker: %v Okey: %v\n", i+1, tile.ID, colorName, tile.Number, tile.IsJoker, tile.IsOkey)
-	}
+	//player1.MarkOkeyTiles(indicatorTile)
+	//player2.MarkOkeyTiles(indicatorTile)
+
+	//fmt.Println("Player 1:")
+	//for i, tile := range *player1 {
+	//	colorName := Core.GetEnumName(Core.ColorEnum, tile.Color)
+	//	fmt.Printf("%d-) ID: %d, %s %d, Joker: %v Okey: %v\n", i+1, tile.ID, colorName, tile.Number, tile.IsJoker, tile.IsOkey)
+	//}
+	//for i, tile := range *player2 {
+	//	colorName := Core.GetEnumName(Core.ColorEnum, tile.Color)
+	//	fmt.Printf("%d-) ID: %d, %s %d, Joker: %v Okey: %v\n", i+1, tile.ID, colorName, tile.Number, tile.IsJoker, tile.IsOkey)
+	//}
 
 	fmt.Println()
-	var takenTile = tiles.TakeOneFromBag((*[]Model.Tile)(player1))
+	var takenTile = tiles.TakeOneFromBag(&playerList[0].TileBag)
 	colorName3 := Core.GetEnumName(Core.ColorEnum, takenTile.Color)
 	fmt.Printf("Ortadan Cekilen Tas - ID: %d, %s %d, Joker: %v\n", takenTile.ID, colorName3, takenTile.Number, takenTile.IsJoker)
 
-	var dropTile = (*player1)[3] //Player1 Bir tas Cantadan cekti ve kendine ekledi
+	var dropTile = playerList[0].TileBag[3] //Player1 Bir tas Cantadan cekti ve kendine ekledi
 	colorName2 := Core.GetEnumName(Core.ColorEnum, dropTile.Color)
 	fmt.Printf("Player1'den Cekilen Tas - ID: %d, %s %d, Joker: %v\n", dropTile.ID, colorName2, dropTile.Number, dropTile.IsJoker)
 
-	Core.DropTileFromTiles((*[]Model.Tile)(player1), dropTile) //Player 1 tas cantadan ceker ve ustten 3.'yu, atar :)
+	Core.DropTileFromTiles((*[]Model.Tile)(&playerList[0].TileBag), dropTile) //Player 1 tas cantadan ceker ve ustten 3.'yu, atar :)
 
-	Core.TakeOneFromTable((*[]Model.Tile)(player2), dropTile)       //Player 2 => Player 1'in 3. elemanini ceker
-	Core.DropTileFromTiles((*[]Model.Tile)(player2), (*player2)[4]) // player 2 ustten 4. elemani atar.
-
-	Core.ShowPlayerTiles(player1, "Player 1:", 22)
-	Core.ShowPlayerTiles(player2, "Player 2:", 21)
+	Core.TakeOneFromTable((*[]Model.Tile)(&playerList[1].TileBag), dropTile)                    //Player 2 => Player 1'in 3. elemanini ceker
+	Core.DropTileFromTiles((*[]Model.Tile)(&playerList[1].TileBag), (playerList[0].TileBag)[4]) // player 2 ustten 4. elemani atar.
+	for i, player := range playerList {
+		start := 0
+		if i == 0 {
+			start = 1
+		}
+		tb := Core.TileBag(player.TileBag) // []Model.Tile → TileBag
+		Core.ShowPlayerTiles(&tb, player.Name, startTileContPerPlayer+start)
+	}
+	//Core.ShowPlayerTiles(player1, "Player 1", 22)
+	//Core.ShowPlayerTiles(player2, "Player 2", 21)
 	fmt.Println()
-	Core.ShowPlayerTiles(&tiles, "Bag :", len(tiles))
+	Core.ShowPlayerTiles(&tiles, "Bag", len(tiles))
 
+}
+
+func dealUserTiles(playerList []Model.Player, tiles Core.TileBag) {
+	for i := range playerCount {
+		start := 0
+		if i == 0 {
+			start = 1
+		}
+		uid, err := Core.GenerateID(userIdLength)
+		if err != nil {
+
+		}
+		playerList[i] = Model.Player{
+			ID:       i,
+			Name:     fmt.Sprintf("Player %d", i+1),
+			TileBag:  *Core.ShowPlayerTiles(&tiles, fmt.Sprintf("Player %d", i+1), startTileContPerPlayer+start),
+			UniqueId: uid,
+		}
+	}
 }
