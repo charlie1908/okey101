@@ -335,3 +335,60 @@ func HasAtLeastFivePairs(opened [][]Model.Tile) bool {
 
 	return pairCount >= 5
 }
+
+// Rakipe Tas isleme. En fazla 2 tas ekliye bilirsin.
+func CanAddTilesToSet(set []Model.Tile, tiles ...Model.Tile) bool {
+	// Eğer eklemek istenen taş yoksa,eklenecek set yok ise, 2 den fazla tas eklenmek istendiginde ve cifte tas eklenmeye calisildiginda
+	if len(tiles) == 0 || len(set) == 0 || len(tiles) > 2 || len(set) < 3 {
+		return false
+	}
+
+	// Yeni taşları mevcut sete ekle
+	newSet := append([]Model.Tile{}, set...) // set'in kopyası
+	newSet = append(newSet, tiles...)        // taşları ekle
+
+	// Yeni set geçerli bir Group veya Sequence oluyor mu?
+	return IsValidGroupOrRun(newSet)
+}
+
+//5 Cift acmis kullaniciya, nasil isleme cift acildigini kontrol edecegiz ?
+//Kullanicinin elindeki taslara bakip hepsi cift ise biz de cift ekleniyor mu diye bakabiliriz ?
+
+// Cifte islenecek taslar uygun mu ?
+func IsValidPair(tiles []Model.Tile) bool {
+	if len(tiles) != 2 {
+		return false
+	}
+
+	tile1, tile2 := tiles[0], tiles[1]
+
+	score1 := CalculateTileScore(tile1, 0, tiles, false)
+	score2 := CalculateTileScore(tile2, 1, tiles, false)
+
+	if score1 != score2 {
+		return false
+	}
+
+	// Aynı sayı varsa, ya renkler aynı olacak ya da en az biri okey/joker olmalı
+	return tile1.IsOkey || tile2.IsOkey || tile1.Color == tile2.Color
+}
+
+// En az 5 Cift acmis kullaniciya cift tas isleme
+func CanAddPairToPairSets(remaining []Model.Tile, pairSets [][]Model.Tile) bool {
+	if IsValidPair(remaining) {
+		return HasAtLeastFivePairs(pairSets)
+	}
+	return false
+}
+
+//**************************************
+
+// Atilan bir tas rakibin herhangi bir setine islenebiliyor mu ?
+func CanThrowingTileBeAddedToOpponentSets(newPair Model.Tile, opponentSets [][]Model.Tile) bool {
+	for _, set := range opponentSets {
+		if CanAddTilesToSet(set, newPair) {
+			return true
+		}
+	}
+	return false
+}
