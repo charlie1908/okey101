@@ -9,9 +9,9 @@ import (
 // Gecersiz yani false oldugu durumda Test yanlistir.
 func TestValidGroup(t *testing.T) {
 	tiles := []Model.Tile{
-		{Number: 5, Color: 1},
-		{Number: 5, Color: 2},
-		{Number: 5, Color: 3},
+		{Number: 5, Color: ColorEnum.Red},
+		{Number: 5, Color: ColorEnum.Blue},
+		{Number: 5, Color: ColorEnum.Yellow},
 	}
 	if !IsValidGroupOrRun(tiles) {
 		t.Error("Expected valid group, got invalid")
@@ -351,6 +351,7 @@ func TestCanAddJokerToSet_ValidRunAddition(t *testing.T) {
 	if !CanAddTilesToSet(set, newTile) {
 		t.Error("Expected to successfully add tile to run")
 	} else {
+		//0 ise basa baska bir sayi ise ve arada bosluk yok ise son rakkam 13'de degil ise sona koy
 		var OkeyTileValue = CalculateTileScore(newTile, 0, set, true)
 		t.Log("Okey Tile Value: ", OkeyTileValue)
 		t.Log("PASS: Added tile to run successfully")

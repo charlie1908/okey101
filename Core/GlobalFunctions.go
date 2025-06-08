@@ -250,3 +250,7 @@ func DropTileFromTiles(playerTiles *[]Model.Tile, dropTile Model.Tile) {
 		}
 	}
 }
+
+func FloatPtr(f float64) *float64 {
+	return &f
+}

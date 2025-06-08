@@ -267,7 +267,7 @@ func CalculateTileScore(tile Model.Tile, index int, tiles []Model.Tile, isSequen
 		numbers = append(numbers, t.Number)
 	}
 
-	// Aradaki boşluğu bul (fark > 1 olan yer) Sirali gitmeyen degeri bul ve bir sonraki olamsi gerekn degeri don. Sonraki - Onceki > 1
+	// Aradaki boşluğu bul (fark > 1 olan yer) Sirali gitmeyen degeri bul ve bir sonraki olamsi gereken degeri don. Sonraki - Onceki > 1
 	for i := 0; i < len(numbers)-1; i++ {
 		if numbers[i+1]-numbers[i] > 1 {
 			return numbers[i] + 1
@@ -276,7 +276,14 @@ func CalculateTileScore(tile Model.Tile, index int, tiles []Model.Tile, isSequen
 
 	// Boşluk yoksa:
 	if numbers[len(numbers)-1] < 13 { //Sona Koy 13'den buyuk olmuyorsa
-		return numbers[len(numbers)-1] + 1
+		//return numbers[len(numbers)-1] + 1
+		if index == 0 {
+			//Basa Koy
+			return numbers[0] - 1
+		} else {
+			//Degil ise sona koy
+			return numbers[len(numbers)-1] + 1
+		}
 	}
 
 	if numbers[0] > 1 { // 1'den buyuk ise ve arada bosluk yok se basa koy.
