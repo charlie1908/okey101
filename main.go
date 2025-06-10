@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"okey101/Core"
 	"okey101/Elastic"
 	"okey101/Model"
+	"okey101/Mongo"
 	"okey101/Shared"
 	"strings"
 	"time"
@@ -14,13 +16,75 @@ import (
 // the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.</p>
 
 func main() {
-	var password, _ = Core.Decrypt("8ii4hYPUQNPziS1PdwhRaevqymWj2eI=", Shared.Config.SECRETKEY)
+	/*var password, _ = Core.Decrypt("8ii4hYPUQNPziS1PdwhRaevqymWj2eI=", Shared.Config.SECRETKEY)
 	fmt.Println(password)
 	var elasticUrl, _ = Core.Decrypt("322thoSHDK/x1X4TJVYpMadamuKERhjbwpF3", Shared.Config.SECRETKEY)
-	fmt.Println(elasticUrl)
+	fmt.Println(elasticUrl)*/
+
+	//MongoDB Creation If Not Exist
+	/*client, ctx, errMongo := Mongo.MongoOpen()
+	if errMongo != nil {
+		panic(errMongo)
+	}
+	defer client.Disconnect(ctx)
+
+	if err := Mongo.EnsureDatabaseAndCollection(client, ctx); err != nil {
+		fmt.Println("DB/Collection oluşturulamadı:", err)
+	} else {
+		fmt.Println("101Okey DB ve Log_Entry collection hazır.")
+	}*/
+	//-------------------------------
 	tiles := Core.CreateFullTileSet()
 	fmt.Println("Toplam taş:", len(tiles)) // 106 olmalı
 	var player1 = Core.ShowPlayerTiles(&tiles, "Player 1:", 22)
+
+	//MongoDB Insert Log----------------
+	client, ctx, errMongo := Mongo.MongoOpen()
+	if errMongo != nil {
+		log.Fatal("Mongo bağlantı hatası:", errMongo)
+	}
+	defer client.Disconnect(ctx)
+	// LogEntry oluştur
+	entry := Mongo.LogEntry{
+		DateTime:                  time.Now(),
+		TimeStamp:                 time.Now(),
+		OrderID:                   1001,
+		UserName:                  "player1",
+		UserID:                    42,
+		ActionType:                1,
+		ActionName:                "StartGame",
+		Message:                   "Oyun başladı",
+		ModuleName:                "GameModule",
+		GameID:                    "game123",
+		RoomID:                    "room456",
+		Tiles:                     Mongo.ConvertCoreTilesToMongoTiles(*player1), // *[]Tile => []Tile
+		PenaltyReasonID:           0,
+		PenaltyReason:             "",
+		PenaltyMultiplier:         1.0,
+		PenaltyPoints:             0,
+		HadOkeyTile:               true,
+		OpenedFivePairsButLost:    false,
+		OkeyUsedInFinish:          false,
+		ReconnectDelaySeconds:     0,
+		GameDurationSeconds:       360.5,
+		PlayerReactionTimeSeconds: 1.75,
+		IPAddress:                 "192.168.1.15",
+		Browser:                   "Chrome",
+		Device:                    "PC",
+		Platform:                  "Windows",
+		ErrorCode:                 0,
+		ExtraData: map[string]interface{}{
+			"customField": "customValue",
+		},
+	}
+
+	id, errMng := Mongo.InsertLogEntry(client, ctx, entry)
+	if errMng != nil {
+		log.Fatal("LogEntry eklenemedi:", errMng)
+	}
+
+	fmt.Println("LogEntry eklendi. ID:", id)
+	//MONGODB INSERT LOG FINISH-----------------------------
 	var player2 = Core.ShowPlayerTiles(&tiles, "Player 2:", 21)
 	indicatorTile := tiles.GetRandomIndicatorFromTiles()
 	fmt.Println("Indicator Tile:")

@@ -23,3 +23,5 @@ rabbitMQ:
   username: "w3yqgg=="
   password: "w3yqgg=="
 lang: "en"
+mongo:
+  url: "mongodb://localhost/101Okey"

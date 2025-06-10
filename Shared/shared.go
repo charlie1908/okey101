@@ -40,6 +40,7 @@ type configuration struct {
 	RABBITMQPASSWORD       string
 	RABBITMQPORT           int
 	LANG                   string
+	MONGOURL               string
 }
 
 var byteStrings = getConfigPrm("encryption", "bytes").(string)
@@ -64,6 +65,7 @@ var Config = configuration{
 	RABBITMQPASSWORD:       getConfigPrm("rabbitmq", "password").(string),
 	RABBITMQPORT:           getConfigPrm("rabbitmq", "port").(int),
 	LANG:                   getConfigPrm("", "lang").(string),
+	MONGOURL:               getConfigPrm("mongo", "url").(string),
 }
 
 func getConfigPrm(root string, prm string) interface{} {
