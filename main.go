@@ -170,9 +170,14 @@ func main() {
 
 	var dropTile = (*player1)[3] //Player1 Bir tas Cantadan cekti ve kendine ekledi
 	colorName2 := Core.GetEnumName(Core.ColorEnum, dropTile.Color)
-	fmt.Printf("Player1'den Cekilen Tas - ID: %d, %s %d, Joker: %v\n", dropTile.ID, colorName2, dropTile.Number, dropTile.IsJoker)
+	//fmt.Printf("Player1'den Cekilen Tas - ID: %d, %s %d, Joker: %v\n", dropTile.ID, colorName2, dropTile.Number, dropTile.IsJoker)
+	colorNameTaken := Core.GetEnumName(Core.ColorEnum, takenTile.Color)
+	fmt.Printf("Player1'den Cekilen Tas - ID: %d, %s %d, Joker: %v\n", takenTile.ID, colorNameTaken, takenTile.Number, takenTile.IsJoker)
 
-	Core.DropTileFromTiles((*[]Model.Tile)(player1), dropTile) //Player 1 tas cantadan ceker ve ustten 3.'yu, atar :)
+	var result = Core.DropTileFromTiles((*[]Model.Tile)(player1), dropTile) //Player 1 tas cantadan ceker ve ustten 3.'yu, atar :)
+	if result {
+		fmt.Printf("Player1'den Atilan Tas - ID: %d, %s %d, Joker: %v\n", dropTile.ID, colorName2, dropTile.Number, dropTile.IsJoker)
+	}
 	// Add ElasticLog for DropTile
 	auditLogDrop := Model.AuditLog{
 		DateTime:   time.Now(),

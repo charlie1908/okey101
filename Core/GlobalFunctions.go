@@ -244,13 +244,25 @@ func TakeOneFromTable(player *[]Model.Tile, tile Model.Tile) {
 	*player = append(*player, tile)
 }
 
-func DropTileFromTiles(playerTiles *[]Model.Tile, dropTile Model.Tile) {
+/*func DropTileFromTiles(playerTiles *[]Model.Tile, dropTile Model.Tile) {
 	for i, tile := range *playerTiles {
 		if tile.ID == dropTile.ID {
 			*playerTiles = append((*playerTiles)[:i], (*playerTiles)[i+1:]...)
 			break
 		}
 	}
+}*/
+
+func DropTileFromTiles(playerTiles *[]Model.Tile, dropTile Model.Tile) bool {
+	var isFound bool = false
+	for i, tile := range *playerTiles {
+		if tile.ID == dropTile.ID {
+			*playerTiles = append((*playerTiles)[:i], (*playerTiles)[i+1:]...)
+			isFound = true
+			break
+		}
+	}
+	return isFound
 }
 
 func FloatPtr(f float64) *float64 {
