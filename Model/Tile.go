@@ -6,4 +6,13 @@ type Tile struct {
 	Color   int  `json:"Color"`
 	IsJoker bool `json:"IsJoker"`
 	IsOkey  bool `json:"IsOkey"`
+	IsOpend bool `json:"IsOpend"`
 }
+
+//IsOpend Property Eklenince Etkilenen Funcionlar
+/* - HasAtLeastFivePairs
+   - CanOpenTiles
+   - CanAddTilesToSet
+   - IsValidPair => CanAddPairToPairSets
+   - CanThrowingTileBeAddedToOpponentSets
+*/

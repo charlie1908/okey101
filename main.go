@@ -41,49 +41,51 @@ func main() {
 	//MongoDB Insert Log----------------
 	client, ctx, errMongo := Mongo.MongoOpen()
 	if errMongo != nil {
-		log.Fatal("Mongo bağlantı hatası:", errMongo)
-	}
-	defer client.Disconnect(ctx)
-	// LogEntry oluştur
-	entry := Mongo.LogEntry{
-		DateTime:                  time.Now(),
-		TimeStamp:                 time.Now(),
-		OrderID:                   1001,
-		UserName:                  "player1",
-		UserID:                    42,
-		ActionType:                1,
-		ActionName:                "StartGame",
-		Message:                   "Oyun başladı",
-		ModuleName:                "GameModule",
-		GameID:                    "game123",
-		RoomID:                    "room456",
-		Tiles:                     Mongo.ConvertCoreTilesToMongoTiles(*player1), // *[]Tile => []Tile
-		PenaltyReasonID:           0,
-		PenaltyReason:             "",
-		PenaltyMultiplier:         1.0,
-		PenaltyPoints:             0,
-		HadOkeyTile:               true,
-		OpenedFivePairsButLost:    false,
-		OkeyUsedInFinish:          false,
-		ReconnectDelaySeconds:     0,
-		GameDurationSeconds:       360.5,
-		PlayerReactionTimeSeconds: 1.75,
-		IPAddress:                 "192.168.1.15",
-		Browser:                   "Chrome",
-		Device:                    "PC",
-		Platform:                  "Windows",
-		ErrorCode:                 0,
-		ExtraData: map[string]interface{}{
-			"customField": "customValue",
-		},
-	}
+		//log.Fatal("Mongo bağlantı hatası:", errMongo)
+		fmt.Println("Mongo bağlantı hatası:", errMongo)
+	} else {
+		defer client.Disconnect(ctx)
+		// LogEntry oluştur
+		entry := Mongo.LogEntry{
+			DateTime:                  time.Now(),
+			TimeStamp:                 time.Now(),
+			OrderID:                   1001,
+			UserName:                  "player1",
+			UserID:                    42,
+			ActionType:                1,
+			ActionName:                "StartGame",
+			Message:                   "Oyun başladı",
+			ModuleName:                "GameModule",
+			GameID:                    "game123",
+			RoomID:                    "room456",
+			Tiles:                     Mongo.ConvertCoreTilesToMongoTiles(*player1), // *[]Tile => []Tile
+			PenaltyReasonID:           0,
+			PenaltyReason:             "",
+			PenaltyMultiplier:         1.0,
+			PenaltyPoints:             0,
+			HadOkeyTile:               true,
+			OpenedFivePairsButLost:    false,
+			OkeyUsedInFinish:          false,
+			ReconnectDelaySeconds:     0,
+			GameDurationSeconds:       360.5,
+			PlayerReactionTimeSeconds: 1.75,
+			IPAddress:                 "192.168.1.15",
+			Browser:                   "Chrome",
+			Device:                    "PC",
+			Platform:                  "Windows",
+			ErrorCode:                 0,
+			ExtraData: map[string]interface{}{
+				"customField": "customValue",
+			},
+		}
 
-	id, errMng := Mongo.InsertLogEntry(client, ctx, entry)
-	if errMng != nil {
-		log.Fatal("LogEntry eklenemedi:", errMng)
-	}
+		id, errMng := Mongo.InsertLogEntry(client, ctx, entry)
+		if errMng != nil {
+			log.Fatal("LogEntry eklenemedi:", errMng)
+		}
 
-	fmt.Println("LogEntry eklendi. ID:", id)
+		fmt.Println("LogEntry eklendi. ID:", id)
+	}
 	//MONGODB INSERT LOG FINISH-----------------------------
 	var player2 = Core.ShowPlayerTiles(&tiles, "Player 2:", 21)
 	indicatorTile := tiles.GetRandomIndicatorFromTiles()
@@ -96,7 +98,8 @@ func main() {
 	fmt.Println("Bag: ")
 	for i, tile := range tiles {
 		colorName := Core.GetEnumName(Core.ColorEnum, tile.Color)
-		fmt.Printf("%d-) ID: %d, %s %d, Joker: %v\n", i+1, tile.ID, colorName, tile.Number, tile.IsJoker)
+		//fmt.Printf("%d-) ID: %d, %s %d, Joker: %v\n", i+1, tile.ID, colorName, tile.Number, tile.IsJoker)
+		fmt.Printf("%d-) ID: %d, %s %d, Joker: %v Okey: %v\n", i+1, tile.ID, colorName, tile.Number, tile.IsJoker, tile.IsOkey)
 	}
 	fmt.Println(strings.Repeat("-", 30))
 

@@ -170,7 +170,7 @@ func TestCanOpenTilesWithOkeyAndJokerSameLineGroup_Valid(t *testing.T) {
 		},
 		{
 			{Number: 12, Color: ColorEnum.Yellow},
-			{Number: 12, Color: ColorEnum.Blue, IsJoker: true},
+			{Number: 12, Color: ColorEnum.Blue, IsJoker: true}, //Aslinda Burda bir hata var Joker Kirmizi 6 bu hata yakalanmali. => *Note
 			{Number: 12, Color: ColorEnum.Red},
 		},
 		{
@@ -238,6 +238,22 @@ func TestHasAtLeastFivePairs_Valid(t *testing.T) {
 		t.Error("Expected to have at least five valid pairs")
 	} else {
 		t.Log("PASS HasAtLeastFivePairs with valid 5 pairs")
+	}
+}
+
+func TestHasAtLeastFivePairsIsOpened_Invalid(t *testing.T) {
+	opened := [][]Model.Tile{
+		{{Number: 3, Color: ColorEnum.Red}, {Number: 3, Color: ColorEnum.Red, IsOpend: true}}, // Biri onceden acilmis
+		{{Number: 7, Color: ColorEnum.Yellow}, {Number: 7, Color: ColorEnum.Yellow}},
+		{{Number: 12, Color: ColorEnum.Blue}, {Number: 12, Color: ColorEnum.Blue}},
+		{{Number: 5, Color: ColorEnum.Red}, {Number: 5, Color: ColorEnum.Red}},
+		{{Number: 9, Color: ColorEnum.Black}, {Number: 9, Color: ColorEnum.Black}},
+	}
+
+	if HasAtLeastFivePairs(opened) {
+		t.Error("Expected to NOT have five valid pairs")
+	} else {
+		t.Log("PASS HasAtLeastFivePairs with invalid pairs")
 	}
 }
 
@@ -360,11 +376,26 @@ func TestCanAddJokerToSet_ValidRunAddition(t *testing.T) {
 
 func TestCanAddTilesToSet_InvalidAddToGroup(t *testing.T) {
 	set := []Model.Tile{
-		{Number: 8, Color: ColorEnum.Red},
-		{Number: 8, Color: ColorEnum.Yellow},
-		{Number: 8, Color: ColorEnum.Blue},
+		{Number: 8, Color: ColorEnum.Red, IsOpend: true},
+		{Number: 8, Color: ColorEnum.Yellow, IsOpend: true},
+		{Number: 8, Color: ColorEnum.Blue, IsOpend: true},
 	}
 	newTile := Model.Tile{Number: 8, Color: ColorEnum.Red}
+
+	if CanAddTilesToSet(set, newTile) {
+		t.Error("Expected failure when adding tile to a pair set (less than 3 tiles)")
+	} else {
+		t.Log("PASS: Cannot add tile to pair set")
+	}
+}
+
+func TestCanAddTilesToSetIsOpened_InvalidAddToGroup(t *testing.T) {
+	set := []Model.Tile{
+		{Number: 8, Color: ColorEnum.Red, IsOpend: true},
+		{Number: 8, Color: ColorEnum.Yellow, IsOpend: true},
+		{Number: 8, Color: ColorEnum.Blue, IsOpend: true},
+	}
+	newTile := Model.Tile{Number: 8, Color: ColorEnum.Black, IsOpend: true}
 
 	if CanAddTilesToSet(set, newTile) {
 		t.Error("Expected failure when adding tile to a pair set (less than 3 tiles)")
@@ -379,8 +410,8 @@ func TestCanAddTilesToSet_InvalidAddToGroup(t *testing.T) {
 func TestCanAddPairToPairSets_ValidPairWithEnoughPairs(t *testing.T) {
 	// Geçerli çift
 	newPair := []Model.Tile{
-		{Number: 8, Color: ColorEnum.Red},
-		{Number: 8, Color: ColorEnum.Red},
+		{Number: 8, Color: ColorEnum.Red, IsOpend: false},
+		{Number: 8, Color: ColorEnum.Red, IsOpend: false},
 	}
 
 	// En az 5 çift açılmış setler
@@ -417,12 +448,12 @@ func TestCanAddPairToPairSets_ValidPairWithEnoughPairs(t *testing.T) {
 func TestCanAddPairToPairSets_InvalidPairOrNotEnoughPairs(t *testing.T) {
 	// Geçersiz çift (farklı renkler, aynı sayı değil)
 	newPair := []Model.Tile{
-		{Number: 8, Color: ColorEnum.Red},
-		{Number: 9, Color: ColorEnum.Red},
-		{Number: 10, Color: ColorEnum.Red},
+		{Number: 8, Color: ColorEnum.Red, IsOpend: false},
+		{Number: 9, Color: ColorEnum.Red, IsOpend: false},
+		{Number: 10, Color: ColorEnum.Red, IsOpend: false},
 	}
 	/*newPair := []Model.Tile{
-		{Number: 8, Color: ColorEnum.Red},
+		{Number: 8, Color: ColorEnum.Red, IsOpend: true},
 		{Number: 8, Color: ColorEnum.Red},
 	}*/
 
@@ -478,7 +509,7 @@ func TestCanThrowingTileBeAddedToOpponentSets_ValidAddition_TotalOver101(t *test
 			{Number: 11, Color: ColorEnum.Black},
 		},
 	}
-	newTile := Model.Tile{Number: 13, Color: ColorEnum.Black} // Eksik rengi tamamlayan taş
+	newTile := Model.Tile{Number: 13, Color: ColorEnum.Black, IsOpend: false} // Eksik rengi tamamlayan taş
 
 	if !CanThrowingTileBeAddedToOpponentSets(newTile, opponentSets) {
 		t.Error("Expected tile to be added to one of the opponent's sets")
@@ -505,7 +536,7 @@ func TestCanThrowingTileBeAddedToOpponentSets_InvalidAddition_TotalOver101(t *te
 			{Number: 8, Color: ColorEnum.Red}, // Seri → 27
 		},
 	}
-	newTile := Model.Tile{Number: 7, Color: ColorEnum.Yellow} // Hiçbir sete uymaz
+	newTile := Model.Tile{Number: 7, Color: ColorEnum.Yellow, IsOpend: false} // Hiçbir sete uymaz
 
 	if CanThrowingTileBeAddedToOpponentSets(newTile, opponentSets) {
 		t.Error("Expected tile NOT to be added to any of the opponent's sets")

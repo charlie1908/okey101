@@ -116,6 +116,7 @@ func CreateFullTileSet() TileBag {
 					Color:   color,
 					IsJoker: false,
 					IsOkey:  false,
+					IsOpend: false,
 				})
 				id++
 			}
@@ -186,7 +187,8 @@ func ShowPlayerTiles(tiles *TileBag, name string, topCount int) *TileBag {
 
 	for i, tile := range *player {
 		colorName := GetEnumName(ColorEnum, tile.Color)
-		fmt.Printf("%d-) ID: %d, %s %d, Joker: %v\n", i+1, tile.ID, colorName, tile.Number, tile.IsJoker)
+		//fmt.Printf("%d-) ID: %d, %s %d, Joker: %v\n", i+1, tile.ID, colorName, tile.Number, tile.IsJoker)
+		fmt.Printf("%d-) ID: %d, %s %d, Joker: %v Okey: %v\n", i+1, tile.ID, colorName, tile.Number, tile.IsJoker, tile.IsOkey)
 	}
 
 	fmt.Println()
