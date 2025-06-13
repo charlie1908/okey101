@@ -44,7 +44,6 @@ func main() {
 	dealUserTiles(playerList, tiles)
 	//var player1 = Core.ShowPlayerTiles(&tiles, "Player 1", 22)
 	//var player2 = Core.ShowPlayerTiles(&tiles, "Player 2", 21)
-	var player1 = Core.ShowPlayerTiles(&tiles, "Player 1:", 22)
 
 	//MongoDB Insert Log----------------
 	client, ctx, errMongo := Mongo.MongoOpen()
@@ -66,7 +65,7 @@ func main() {
 			ModuleName:                "GameModule",
 			GameID:                    "game123",
 			RoomID:                    "room456",
-			Tiles:                     Mongo.ConvertCoreTilesToMongoTiles(*player1), // *[]Tile => []Tile
+			Tiles:                     Mongo.ConvertCoreTilesToMongoTiles(playerList[0].TileBag), // *[]Tile => []Tile
 			PenaltyReasonID:           0,
 			PenaltyReason:             "",
 			PenaltyMultiplier:         1.0,
@@ -196,7 +195,7 @@ func main() {
 	colorNameTaken := Core.GetEnumName(Core.ColorEnum, takenTile.Color)
 	fmt.Printf("Player1'den Cekilen Tas - ID: %d, %s %d, Joker: %v\n", takenTile.ID, colorNameTaken, takenTile.Number, takenTile.IsJoker)
 
-	var result = Core.DropTileFromTiles((*[]Model.Tile)(player1), dropTile) //Player 1 tas cantadan ceker ve ustten 3.'yu, atar :)
+	var result = Core.DropTileFromTiles(&playerList[0].TileBag, dropTile) //Player 1 tas cantadan ceker ve ustten 3.'yu, atar :)
 	if result {
 		fmt.Printf("Player1'den Atilan Tas - ID: %d, %s %d, Joker: %v\n", dropTile.ID, colorName2, dropTile.Number, dropTile.IsJoker)
 	}
