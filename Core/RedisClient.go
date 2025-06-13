@@ -9,6 +9,7 @@ package Core
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/redis/go-redis/v9"
 	"github.com/ulule/limiter/v3"
 	redisStore "github.com/ulule/limiter/v3/drivers/store/redis"
@@ -89,6 +90,18 @@ func GenerateRedisKey(userName string, isRefreshToken bool) string {
 		return userName + ":RefreshToken"
 	}
 	return userName + ":Token"
+}
+
+func GenerateRoomStateRedisKey(roomID string) string {
+	return fmt.Sprintf("room:%s:state", roomID)
+}
+
+func GeneratePlayerStateRedisKey(roomID, userName string) string {
+	return fmt.Sprintf("room:%s:player:%s", roomID, userName)
+}
+
+func GenerateRoomDiscardZoneKey(roomID, userName string) string {
+	return fmt.Sprintf("room:%s:player:%s:discard", roomID, userName)
 }
 
 func GetGlobalLimiter() *limiter.Limiter {

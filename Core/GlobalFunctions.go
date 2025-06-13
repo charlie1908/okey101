@@ -268,3 +268,20 @@ func DropTileFromTiles(playerTiles *[]Model.Tile, dropTile Model.Tile) bool {
 func FloatPtr(f float64) *float64 {
 	return &f
 }
+
+var Game GameGroupState
+
+func ResetGame() {
+	Game = GameGroupState{
+		GroupIDCounter: 0,
+	}
+}
+
+type GameGroupState struct {
+	GroupIDCounter int
+}
+
+func (g *GameGroupState) GenerateGroupID() int {
+	g.GroupIDCounter++
+	return g.GroupIDCounter
+}
