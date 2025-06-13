@@ -15,7 +15,7 @@ func IsValidGroups(tiles [][]Model.Tile) bool {
 }
 
 // Kendisine gelen tas dizilimlerinin Ayni Sayi Farkjli Renk (Group) veya Sirali Ayni Renk (RUN) olma durumuna bakma.
-func IsValidGroupOrRun(tiles []Model.Tile) bool {
+func IsValidGroupOrRun(tiles []*Model.Tile) bool {
 	if len(tiles) < 3 {
 		return false
 	}
@@ -87,7 +87,7 @@ func calculateNeededOkeysForRun(tiles []Model.Tile, maxOkeys int) int {
 	return neededOkeys
 }
 
-func countOkeys(tiles []Model.Tile) int {
+func countOkeys(tiles []*Model.Tile) int {
 	count := 0
 	for _, tile := range tiles {
 		if tile.IsOkey {
@@ -97,11 +97,11 @@ func countOkeys(tiles []Model.Tile) int {
 	return count
 }
 
-func filterNonOkeys(tiles []Model.Tile) []Model.Tile {
+func filterNonOkeys(tiles []*Model.Tile) []Model.Tile {
 	result := make([]Model.Tile, 0, len(tiles))
 	for _, tile := range tiles {
 		if !tile.IsOkey {
-			result = append(result, tile)
+			result = append(result, *tile)
 		}
 	}
 	return result
@@ -229,7 +229,7 @@ func allSameColor(tiles []Model.Tile) bool {
 	return 0 // Fallback, olmaması gerekir
 }*/
 
-func CalculateTileScore(tile Model.Tile, index int, tiles []Model.Tile, isSequence bool) int {
+func CalculateTileScore(tile *Model.Tile, index int, tiles []*Model.Tile, isSequence bool) int {
 	if !tile.IsOkey {
 		return tile.Number
 	}
@@ -257,7 +257,7 @@ func CalculateTileScore(tile Model.Tile, index int, tiles []Model.Tile, isSequen
 	nonOkeys := []Model.Tile{}
 	for _, t := range tiles {
 		if !t.IsOkey {
-			nonOkeys = append(nonOkeys, t)
+			nonOkeys = append(nonOkeys, *t)
 		}
 	}
 
@@ -303,7 +303,7 @@ func CalculateTileScore(tile Model.Tile, index int, tiles []Model.Tile, isSequen
 }
 
 // Acilan seri uygun ve toplamlari 101 ve uzeri ise..
-func CanOpenTiles(opened [][]Model.Tile) bool {
+func CanOpenTiles(opened [][]*Model.Tile) bool {
 	totalScore := 0
 	for _, group := range opened {
 
@@ -333,23 +333,36 @@ func CanOpenTiles(opened [][]Model.Tile) bool {
 }
 
 // Acilan Tas gurubunun IsOpened'ini true olarak ata.
-func SetOpentiles(opened [][]Model.Tile) {
+func SetOpentiles(opened [][]*Model.Tile) {
 	for _, group := range opened {
+		//101'i gecen elde acilan tum array grouplara ayri ayri unique groupID tanimlanir.
+		var groupID = Game.GenerateGroupID()
 		for _, tile := range group {
 			tile.IsOpend = true
+			tile.GroupID = &groupID
 		}
 	}
 }
 
 // Acilan taslarda IsOpened = true olarak ata.
-func SetOpenPairtiles(setTiles []Model.Tile) {
+func SetOpenPairtiles(setTiles []*Model.Tile, grpID ...int) {
+	//Pair olarak acilan taslara Global ayni siradaki GroupID atanir.
+	var groupID int
+	//Esleme yapiliyor ise eslenen Tilelarin groupID'si
+	if len(grpID) > 0 {
+		groupID = grpID[0]
+	} else {
+		//Eslenmiyor direkt aciliyor ise Global siradaki GroupID atanir.
+		groupID = Game.GenerateGroupID()
+	}
 	for _, tile := range setTiles {
 		tile.IsOpend = true
+		tile.GroupID = &groupID
 	}
 }
 
 // Taslarin icinde Acilan var mi ?
-func HasOpenTail(tiles ...Model.Tile) bool {
+func HasOpenTail(tiles ...*Model.Tile) bool {
 	for _, tile := range tiles {
 		if tile.IsOpend {
 			return true
@@ -359,7 +372,7 @@ func HasOpenTail(tiles ...Model.Tile) bool {
 }
 
 // Açılan taşlar arasında 5 çift var mı?
-func HasAtLeastFivePairs(opened [][]Model.Tile) bool {
+func HasAtLeastFivePairs(opened [][]*Model.Tile) bool {
 	pairCount := 0
 
 	for _, group := range opened {
@@ -399,8 +412,40 @@ func HasAtLeastFivePairs(opened [][]Model.Tile) bool {
 	return result
 }
 
+// Açılan 5 cift taşa yeni pair eklenirken valid mi diye bakmak. Zaten isOpend : true ve GroupID leri var!
+func HasAtLeastFivePairsForSetNewPair(opened [][]*Model.Tile) bool {
+	pairCount := 0
+
+	for _, group := range opened {
+		if len(group) == 2 {
+			tile1, tile2 := group[0], group[1]
+
+			// Okey olan taşların değerini bulmak için CalculateTileScore kullanıyoruz
+			score1 := CalculateTileScore(tile1, 0, group, false)
+			score2 := CalculateTileScore(tile2, 1, group, false)
+
+			// Aynı sayı mı?
+			if score1 == score2 {
+				// Aynı renk mi ya da okey (joker) taşı var mı?
+				// Eğer ikisi de okey ise kabul edilir.
+				// Ya da renkleri aynı ise kabul edilir.
+				if tile1.IsOkey || tile2.IsOkey || tile1.Color == tile2.Color {
+					pairCount++
+				} else {
+					return false
+				}
+			} else {
+				return false
+			}
+		}
+	}
+
+	var result = pairCount >= 5
+	return result
+}
+
 // Rakipe Tas isleme. En fazla 2 tas ekliye bilirsin.
-func CanAddTilesToSet(set []Model.Tile, tiles ...Model.Tile) bool {
+func CanAddTilesToSet(set []*Model.Tile, tiles ...*Model.Tile) bool {
 	// Eğer eklemek istenen taş yoksa,eklenecek set yok ise, 2 den fazla tas eklenmek istendiginde ve cifte tas eklenmeye calisildiginda
 	if len(tiles) == 0 || len(set) == 0 || len(tiles) > 2 || len(set) < 3 {
 		return false
@@ -412,14 +457,14 @@ func CanAddTilesToSet(set []Model.Tile, tiles ...Model.Tile) bool {
 	}
 
 	// Yeni taşları mevcut sete ekle
-	newSet := append([]Model.Tile{}, set...) // set'in kopyası
-	newSet = append(newSet, tiles...)        // taşları ekle
+	newSet := append([]*Model.Tile{}, set...) // set'in kopyası
+	newSet = append(newSet, tiles...)         // taşları ekle
 
 	// Yeni set geçerli bir Group veya Sequence oluyor mu?
 	var result = IsValidGroupOrRun(newSet)
 	if result {
 		//Islenen Taslar Acilmis olunur..
-		SetOpenPairtiles(set)
+		SetOpenPairtiles(newSet, *set[0].GroupID)
 	}
 	return result
 }
@@ -428,7 +473,7 @@ func CanAddTilesToSet(set []Model.Tile, tiles ...Model.Tile) bool {
 //Kullanicinin elindeki taslara bakip hepsi cift ise biz de cift ekleniyor mu diye bakabiliriz ?
 
 // Cifte islenecek taslar uygun mu ?
-func IsValidPair(tiles []Model.Tile) bool {
+func IsValidPair(tiles []*Model.Tile) bool {
 	if len(tiles) != 2 {
 		return false
 	}
@@ -452,11 +497,12 @@ func IsValidPair(tiles []Model.Tile) bool {
 }
 
 // En az 5 Cift acmis kullaniciya cift tas isleme
-func CanAddPairToPairSets(remaining []Model.Tile, pairSets [][]Model.Tile) bool {
+func CanAddPairToPairSets(remaining []*Model.Tile, pairSets [][]*Model.Tile) bool {
 	if IsValidPair(remaining) {
-		var result = HasAtLeastFivePairs(pairSets)
+		//var result = HasAtLeastFivePairs(pairSets)
+		var result = HasAtLeastFivePairsForSetNewPair(pairSets)
 		if result {
-			//Islene Pair IsOpened = true olarak isaretlenir..
+			//Islene Pair IsOpened = true olarak isaretlenir..Ayrica yeni GroupID atanir.
 			SetOpenPairtiles(remaining)
 		}
 		return result
@@ -467,7 +513,7 @@ func CanAddPairToPairSets(remaining []Model.Tile, pairSets [][]Model.Tile) bool 
 //**************************************
 
 // Atilan bir tas rakibin herhangi bir setine islenebiliyor mu ?
-func CanThrowingTileBeAddedToOpponentSets(newPair Model.Tile, opponentSets [][]Model.Tile) bool {
+func CanThrowingTileBeAddedToOpponentSets(newPair *Model.Tile, opponentSets [][]*Model.Tile) bool {
 	if newPair.IsOpend {
 		//Acilan tas bir daha atilamaz.
 		return false

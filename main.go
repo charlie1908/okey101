@@ -19,6 +19,14 @@ const startTileContPerPlayer int = 21
 const userIdLength = 12
 
 func main() {
+
+	//Ornek Global Artan GroupID Acilan ya da Islenen Tas Setleri icin kullanilicak.
+	Core.ResetGame()
+
+	//GroupID 1 artarak yazdirilir..
+	//fmt.Println(Core.Game.GenerateGroupID())
+	//fmt.Println(Core.Game.GenerateGroupID())
+
 	/*var password, _ = Core.Decrypt("8ii4hYPUQNPziS1PdwhRaevqymWj2eI=", Shared.Config.SECRETKEY)
 	fmt.Println(password)
 	var elasticUrl, _ = Core.Decrypt("322thoSHDK/x1X4TJVYpMadamuKERhjbwpF3", Shared.Config.SECRETKEY)
