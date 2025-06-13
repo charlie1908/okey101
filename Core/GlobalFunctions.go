@@ -123,6 +123,7 @@ func CreateFullTileSet() TileBag {
 					Color:   color,
 					IsJoker: false,
 					IsOkey:  false,
+					IsOpend: false,
 				})
 				id++
 			}
@@ -204,7 +205,8 @@ func ShowPlayerTiles(tiles *TileBag, name string, topCount int) *TileBag {
 
 	for i, tile := range *player {
 		colorName := GetEnumName(ColorEnum, tile.Color)
-		fmt.Printf("%d-) ID: %d, %s %d, Joker: %v\n", i+1, tile.ID, colorName, tile.Number, tile.IsJoker)
+		//fmt.Printf("%d-) ID: %d, %s %d, Joker: %v\n", i+1, tile.ID, colorName, tile.Number, tile.IsJoker)
+		fmt.Printf("%d-) ID: %d, %s %d, Joker: %v Okey: %v\n", i+1, tile.ID, colorName, tile.Number, tile.IsJoker, tile.IsOkey)
 	}
 
 	fmt.Println()
@@ -260,11 +262,27 @@ func TakeOneFromTable(player *[]Model.Tile, tile Model.Tile) {
 	*player = append(*player, tile)
 }
 
-func DropTileFromTiles(playerTiles *[]Model.Tile, dropTile Model.Tile) {
+/*func DropTileFromTiles(playerTiles *[]Model.Tile, dropTile Model.Tile) {
 	for i, tile := range *playerTiles {
 		if tile.ID == dropTile.ID {
 			*playerTiles = append((*playerTiles)[:i], (*playerTiles)[i+1:]...)
 			break
 		}
 	}
+}*/
+
+func DropTileFromTiles(playerTiles *[]Model.Tile, dropTile Model.Tile) bool {
+	var isFound bool = false
+	for i, tile := range *playerTiles {
+		if tile.ID == dropTile.ID {
+			*playerTiles = append((*playerTiles)[:i], (*playerTiles)[i+1:]...)
+			isFound = true
+			break
+		}
+	}
+	return isFound
+}
+
+func FloatPtr(f float64) *float64 {
+	return &f
 }
