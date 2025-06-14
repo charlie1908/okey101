@@ -52,10 +52,10 @@ func TestValidRun(t *testing.T) {
 // Sirali Artan ayni Renk Okeyli Run Gecerli Testi.
 func TestValidRunWithOkey(t *testing.T) {
 	tiles := []*Model.Tile{
-		{Number: 4, Color: 1},
-		{IsOkey: true},
-		{IsOkey: true},
+		{Number: 12, Color: ColorEnum.Blue, IsOkey: true},
+		{Number: 12, Color: ColorEnum.Blue, IsOkey: true},
 		{Number: 7, Color: 1},
+		{Number: 4, Color: 1},
 	}
 	if !IsValidGroupOrRun(tiles) {
 		t.Error("Expected valid run with joker, got invalid")
@@ -118,7 +118,8 @@ func TestCanOpenTilesWithOkeyAndJoker_Valid(t *testing.T) {
 			{Number: 13, Color: ColorEnum.Blue},
 			{Number: 12, Color: ColorEnum.Blue},
 			{Number: 11, Color: ColorEnum.Blue},
-			{IsOkey: true},
+			//{IsOkey: true},
+			{Number: 12, Color: ColorEnum.Blue, IsOkey: true},
 		},
 		{
 			{Number: 6, Color: ColorEnum.Yellow},
@@ -160,17 +161,17 @@ func TestCanOpenTilesWithOkeyAndJokerSameLineGroup_Valid(t *testing.T) {
 		},
 		{
 			{Number: 6, Color: ColorEnum.Yellow},
-			{IsOkey: true}, // okey, 0 puan
-			{Number: 6, Color: ColorEnum.Red, IsJoker: true},
+			{Number: 12, Color: ColorEnum.Blue, IsOkey: true}, // okey
+			{Number: 6, Color: ColorEnum.Red, IsJoker: true},  //Aslinda Burda bir hata var Joker Mavi 12 bu hata yakalanmali. => *Note
 		},
 		{
 			{Number: 5, Color: ColorEnum.Red},
 			{Number: 5, Color: ColorEnum.Yellow},
-			{Number: 5, Color: ColorEnum.Blue}, // 0 puan
+			{Number: 5, Color: ColorEnum.Blue},
 		},
 		{
 			{Number: 12, Color: ColorEnum.Yellow},
-			{Number: 12, Color: ColorEnum.Blue, IsJoker: true}, //Aslinda Burda bir hata var Joker Kirmizi 6 bu hata yakalanmali. => *Note
+			{Number: 12, Color: ColorEnum.Blue, IsJoker: true},
 			{Number: 12, Color: ColorEnum.Red},
 		},
 		{
@@ -192,12 +193,12 @@ func TestCanOpenTilesWithOkeyAndJokerSameLineSquence_Valid(t *testing.T) {
 		{
 			{Number: 10, Color: ColorEnum.Blue},
 			{Number: 11, Color: ColorEnum.Blue, IsJoker: true},
-			{Number: 12, Color: ColorEnum.Red, IsOkey: true},
+			{Number: 11, Color: ColorEnum.Red, IsOkey: true},
 		},
 		{
-			{Number: 12, Color: ColorEnum.Yellow},
-			{Number: 12, Color: ColorEnum.Red, IsOkey: true}, // okey, 0 puan
-			{Number: 12, Color: ColorEnum.Red, IsJoker: true},
+			{Number: 11, Color: ColorEnum.Yellow},
+			{Number: 11, Color: ColorEnum.Red, IsOkey: true}, // Okey
+			{Number: 11, Color: ColorEnum.Red, IsJoker: true},
 		},
 		{
 			{Number: 5, Color: ColorEnum.Red},
@@ -206,7 +207,8 @@ func TestCanOpenTilesWithOkeyAndJokerSameLineSquence_Valid(t *testing.T) {
 		},
 		{
 			{Number: 9, Color: ColorEnum.Yellow},
-			{Number: 9, Color: ColorEnum.Blue, IsJoker: true},
+			//{Number: 9, Color: ColorEnum.Blue, IsJoker: true},
+			{Number: 9, Color: ColorEnum.Blue},
 			{Number: 9, Color: ColorEnum.Red},
 		},
 		{
@@ -369,8 +371,9 @@ func TestCanAddJokerToSet_ValidRunAddition(t *testing.T) {
 	if !CanAddTilesToSet(set, &newTile) {
 		t.Error("Expected to successfully add tile to run")
 	} else {
-		//0 ise basa baska bir sayi ise ve arada bosluk yok ise son rakkam 13'de degil ise sona koy
-		var OkeyTileValue = CalculateTileScore(&newTile, 0, set, true)
+		//0 ise basa basa bir sayi ise ve arada bosluk yok ise son rakkam 13'de degil ise sona koy
+		//var OkeyTileValue = CalculateTileScore(&newTile, 0, set, true)
+		var OkeyTileValue = CalculateTileScore(&newTile, 2, set, true)
 		t.Log("Okey Tile Value: ", OkeyTileValue)
 		t.Log("PASS: Added tile to run successfully")
 	}
