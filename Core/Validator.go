@@ -27,7 +27,7 @@ func IsValidGroupOrRun(tiles []*Model.Tile) bool {
 }
 
 // Kirmizi 5, Mavi 5, Sari 5
-func isGroup(tiles []Model.Tile, okeyCount int) bool {
+func isGroup(tiles []*Model.Tile, okeyCount int) bool {
 	if len(tiles) == 0 {
 		return false
 	}
@@ -47,7 +47,7 @@ func isGroup(tiles []Model.Tile, okeyCount int) bool {
 }
 
 // Siyah 3, Siyah 4, Siyah 5
-func isSequence(tiles []Model.Tile, okeyCount int) bool {
+func isSequence(tiles []*Model.Tile, okeyCount int) bool {
 	if len(tiles) == 0 {
 		return false
 	}
@@ -58,6 +58,7 @@ func isSequence(tiles []Model.Tile, okeyCount int) bool {
 	}
 
 	//Kullanici o seriyi sirali vermese bile siralar dogru mu diye siralayip bakariz..
+	//***Buradaki siralama orjinal gelen taslarin sirasini degistimes. Sadece 	nonOkeyTiles := filterNonOkeys(tiles)'den gelen yeni slice tipinin yerini degistirir..
 	sort.Slice(tiles, func(i, j int) bool {
 		return tiles[i].Number < tiles[j].Number
 	})
@@ -69,7 +70,7 @@ func isSequence(tiles []Model.Tile, okeyCount int) bool {
 	return neededOkeys <= okeyCount && len(tiles)+okeyCount >= 3
 }
 
-func calculateNeededOkeysForRun(tiles []Model.Tile, maxOkeys int) int {
+func calculateNeededOkeysForRun(tiles []*Model.Tile, maxOkeys int) int {
 	neededOkeys := 0
 	for i := 1; i < len(tiles); i++ {
 		diff := tiles[i].Number - tiles[i-1].Number
@@ -97,17 +98,17 @@ func countOkeys(tiles []*Model.Tile) int {
 	return count
 }
 
-func filterNonOkeys(tiles []*Model.Tile) []Model.Tile {
-	result := make([]Model.Tile, 0, len(tiles))
+func filterNonOkeys(tiles []*Model.Tile) []*Model.Tile {
+	result := make([]*Model.Tile, 0, len(tiles))
 	for _, tile := range tiles {
 		if !tile.IsOkey {
-			result = append(result, *tile)
+			result = append(result, tile)
 		}
 	}
 	return result
 }
 
-func allSameColor(tiles []Model.Tile) bool {
+func allSameColor(tiles []*Model.Tile) bool {
 	if len(tiles) == 0 {
 		return true
 	}

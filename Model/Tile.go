@@ -8,6 +8,7 @@ type Tile struct {
 	IsOkey  bool `json:"IsOkey"`
 	IsOpend bool `json:"IsOpend"`
 	GroupID *int `json:"GroupID,omitempty"` // sadece açık taşlar için atanır
+	OrderID *int `json:"OrderID,omitempty"` // UI'dan gelen siralama, Grup icindeki sirayi sagdan sola gore belirler.
 	X       *int `json:"X,omitempty"`       // UI sıralaması için (isteğe bağlı)
 	Y       *int `json:"Y,omitempty"`       // UI grubu için (isteğe bağlı)
 }
