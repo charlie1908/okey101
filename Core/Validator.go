@@ -517,3 +517,581 @@ func CanThrowingTileBeAddedToOpponentSets(newPair *Model.Tile, opponentSets [][]
 	}
 	return false
 }
+
+func SplitTilesByValidGroupsOrRuns_Old(tiles []*Model.Tile) ([][]*Model.Tile, []*Model.Tile) {
+	sort.Slice(tiles, func(i, j int) bool {
+		if tiles[i].Color == tiles[j].Color {
+			return tiles[i].Number < tiles[j].Number
+		}
+		return tiles[i].Color < tiles[j].Color
+	})
+
+	n := len(tiles)
+	type candidate struct {
+		Indices   []int
+		Group     []*Model.Tile
+		OkeyCount int
+	}
+	var candidates []candidate
+
+	// Tüm 3 ve daha uzun kombinasyonları oluştur
+	for size := 3; size <= n; size++ {
+		indexes := make([]int, size)
+		var generate func(int, int)
+		generate = func(start, depth int) {
+			if depth == size {
+				var group []*Model.Tile
+				var okeyCount int
+				for _, idx := range indexes {
+					tile := tiles[idx]
+					group = append(group, tile)
+					if tile.IsOkey {
+						okeyCount++
+					}
+				}
+				if okeyCount > 2 {
+					return
+				}
+				nonOkeys := filterNonOkeys(group)
+				if isGroup(nonOkeys, okeyCount) || isSequence(nonOkeys, okeyCount) {
+					tmp := make([]*Model.Tile, len(group))
+					copy(tmp, group)
+					tmpIdx := make([]int, len(indexes))
+					copy(tmpIdx, indexes)
+					candidates = append(candidates, candidate{
+						Indices:   tmpIdx,
+						Group:     tmp,
+						OkeyCount: okeyCount,
+					})
+				}
+				return
+			}
+			for i := start; i <= n-(size-depth); i++ {
+				indexes[depth] = i
+				generate(i+1, depth+1)
+			}
+		}
+		generate(0, 0)
+	}
+
+	// Okey sayısına göre azdan çoğa sırala
+	sort.SliceStable(candidates, func(i, j int) bool {
+		return candidates[i].OkeyCount < candidates[j].OkeyCount
+	})
+
+	used := make([]bool, n)
+	var result [][]*Model.Tile
+
+	for _, cand := range candidates {
+		conflict := false
+		for _, idx := range cand.Indices {
+			if used[idx] {
+				conflict = true
+				break
+			}
+		}
+		if !conflict {
+			for _, idx := range cand.Indices {
+				used[idx] = true
+			}
+			result = append(result, cand.Group)
+		}
+	}
+
+	var remaining []*Model.Tile
+	for i, u := range used {
+		if !u {
+			remaining = append(remaining, tiles[i])
+		}
+	}
+
+	return result, remaining
+}
+
+func SplitTilesByValidGroupsOrRuns_X(tiles []*Model.Tile) ([][]*Model.Tile, []*Model.Tile) {
+	sort.Slice(tiles, func(i, j int) bool {
+		if tiles[i].Color == tiles[j].Color {
+			return tiles[i].Number > tiles[j].Number // Büyükten küçüğe sayı sıralaması
+		}
+		return tiles[i].Color < tiles[j].Color // Renk sıralaması aynı kalıyor (küçükten büyüğe)
+	})
+
+	n := len(tiles)
+	type candidate struct {
+		Indices   []int
+		Group     []*Model.Tile
+		OkeyCount int
+	}
+	var candidates []candidate
+
+	//for size := 3; size <= n; size++ {
+	for size := n; size >= 3; size-- {
+		indexes := make([]int, size)
+		var generate func(int, int)
+		generate = func(start, depth int) {
+			if depth == size {
+				var group []*Model.Tile
+				var okeyCount int
+				for _, idx := range indexes {
+					tile := tiles[idx]
+					group = append(group, tile)
+					if tile.IsOkey {
+						okeyCount++
+					}
+				}
+				if okeyCount > 2 {
+					return
+				}
+				nonOkeys := filterNonOkeys(group)
+				if isGroup(nonOkeys, okeyCount) || isSequence(nonOkeys, okeyCount) {
+					tmp := make([]*Model.Tile, len(group))
+					copy(tmp, group)
+					tmpIdx := make([]int, len(indexes))
+					copy(tmpIdx, indexes)
+					candidates = append(candidates, candidate{
+						Indices:   tmpIdx,
+						Group:     tmp,
+						OkeyCount: okeyCount,
+					})
+				}
+				return
+			}
+			for i := start; i <= n-(size-depth); i++ {
+				indexes[depth] = i
+				generate(i+1, depth+1)
+			}
+		}
+		generate(0, 0)
+	}
+
+	sort.SliceStable(candidates, func(i, j int) bool {
+		return candidates[i].OkeyCount < candidates[j].OkeyCount
+	})
+
+	used := make([]bool, n)
+	var result [][]*Model.Tile
+
+	for _, cand := range candidates {
+		conflict := false
+		for _, idx := range cand.Indices {
+			if used[idx] {
+				conflict = true
+				break
+			}
+		}
+		if !conflict {
+			for _, idx := range cand.Indices {
+				used[idx] = true
+			}
+			result = append(result, cand.Group)
+		}
+	}
+
+	for _, g := range result {
+		sort.Slice(g, func(i, j int) bool {
+			numI := getEffectiveNumber(g[i], g)
+			numJ := getEffectiveNumber(g[j], g)
+
+			if g[i].Color == g[j].Color {
+				return numI < numJ
+			}
+			return g[i].Color < g[j].Color
+		})
+	}
+
+	// Kullanılmayan taşlar kalanlara eklenir
+	var remaining []*Model.Tile
+	for i, u := range used {
+		if !u {
+			remaining = append(remaining, tiles[i])
+		}
+	}
+
+	return result, remaining
+}
+
+func SplitTilesByValidGroupsOrRuns_XX(tiles []*Model.Tile) ([][]*Model.Tile, []*Model.Tile) {
+	n := len(tiles)
+
+	// Öncelikle taşları renk ve sayı bazında sıralayalım
+	sort.Slice(tiles, func(i, j int) bool {
+		if tiles[i].Color == tiles[j].Color {
+			return tiles[i].Number < tiles[j].Number // küçükten büyüğe
+		}
+		return tiles[i].Color < tiles[j].Color
+	})
+
+	type candidate struct {
+		Indices   []int
+		Group     []*Model.Tile
+		OkeyCount int
+	}
+
+	// Tüm geçerli grupları bul
+	var allGroups []candidate
+
+	for size := 3; size <= n; size++ {
+		indexes := make([]int, size)
+		var generate func(int, int)
+		generate = func(start, depth int) {
+			if depth == size {
+				var group []*Model.Tile
+				okeyCount := 0
+				for _, idx := range indexes {
+					t := tiles[idx]
+					group = append(group, t)
+					if t.IsOkey {
+						okeyCount++
+					}
+				}
+				if okeyCount > 2 {
+					return
+				}
+				nonOkeys := filterNonOkeys(group)
+				if isGroup(nonOkeys, okeyCount) || isSequence(nonOkeys, okeyCount) {
+					tmp := make([]*Model.Tile, len(group))
+					copy(tmp, group)
+					tmpIdx := make([]int, len(indexes))
+					copy(tmpIdx, indexes)
+					allGroups = append(allGroups, candidate{
+						Indices:   tmpIdx,
+						Group:     tmp,
+						OkeyCount: okeyCount,
+					})
+				}
+				return
+			}
+			for i := start; i <= n-(size-depth); i++ {
+				indexes[depth] = i
+				generate(i+1, depth+1)
+			}
+		}
+		generate(0, 0)
+	}
+
+	// Artık elimizde tüm geçerli gruplar var.
+
+	// Burada "grupların kombinasyonlarını" deneyip,
+	// Maksimum taş açan, maksimum puanlı kombinasyonu bulacağız.
+
+	// Bu, backtracking / bitmask ile yapılabilir.
+
+	maxTilesUsed := 0
+	maxScore := 0
+	var bestCombination [][]*Model.Tile
+
+	var backtrack func(start int, used map[int]bool, current [][]*Model.Tile)
+	backtrack = func(start int, used map[int]bool, current [][]*Model.Tile) {
+		// Kullanılan taş sayısı ve puanı hesapla
+		usedCount := len(used)
+		score := 0
+		for _, group := range current {
+			score += sumGroupScore(group)
+		}
+
+		// Eğer daha çok taş kullanıyorsak ya da aynı taş sayısında daha yüksek puan varsa güncelle
+		if usedCount > maxTilesUsed || (usedCount == maxTilesUsed && score > maxScore) {
+			maxTilesUsed = usedCount
+			maxScore = score
+			bestCombination = make([][]*Model.Tile, len(current))
+			for i := range current {
+				bestCombination[i] = make([]*Model.Tile, len(current[i]))
+				copy(bestCombination[i], current[i])
+			}
+		}
+
+		for i := start; i < len(allGroups); i++ {
+			canUse := true
+			for _, idx := range allGroups[i].Indices {
+				if used[idx] {
+					canUse = false
+					break
+				}
+			}
+			if !canUse {
+				continue
+			}
+
+			// Kullanılan taşları işaretle
+			for _, idx := range allGroups[i].Indices {
+				used[idx] = true
+			}
+			current = append(current, allGroups[i].Group)
+
+			backtrack(i+1, used, current)
+
+			// Geri al
+			current = current[:len(current)-1]
+			for _, idx := range allGroups[i].Indices {
+				delete(used, idx)
+			}
+		}
+	}
+
+	backtrack(0, make(map[int]bool), [][]*Model.Tile{})
+
+	// Kullanılmayan taşlar
+	used := make(map[int]bool)
+	for _, group := range bestCombination {
+		for _, t := range group {
+			for i, tile := range tiles {
+				if tile == t {
+					used[i] = true
+					break
+				}
+			}
+		}
+	}
+	var remaining []*Model.Tile
+	for i, tile := range tiles {
+		if !used[i] {
+			remaining = append(remaining, tile)
+		}
+	}
+
+	// Her grubu sayısal ve renk olarak sıralayalım
+	/*for _, g := range bestCombination {
+		sort.Slice(g, func(i, j int) bool {
+			numI := getEffectiveNumber(g[i], g)
+			numJ := getEffectiveNumber(g[j], g)
+			if g[i].Color == g[j].Color {
+				return numI < numJ
+			}
+			return g[i].Color < g[j].Color
+		})
+	}*/
+
+	//Okey siralamasinda yukaridaki loop hatali calisiyordu!
+	for i, g := range bestCombination {
+		bestCombination[i] = sortGroupByEffectiveNumber(g)
+	}
+
+	return bestCombination, remaining
+}
+
+func SplitTilesByValidGroupsOrRuns(tiles []*Model.Tile) ([][]*Model.Tile, []*Model.Tile) {
+	n := len(tiles)
+
+	// Renk ve sayıya göre sırala
+	sort.Slice(tiles, func(i, j int) bool {
+		if tiles[i].Color == tiles[j].Color {
+			return tiles[i].Number < tiles[j].Number
+		}
+		return tiles[i].Color < tiles[j].Color
+	})
+
+	type candidate struct {
+		Indices []int
+		Group   []*Model.Tile
+	}
+
+	var allGroups []candidate
+
+	for size := 3; size <= n; size++ {
+		indices := make([]int, size)
+		var generate func(start, depth int)
+		generate = func(start, depth int) {
+			if depth == size { //Bu gerceklendiginde bir kombinasyon tamamlanmış oluyor.
+				group := make([]*Model.Tile, size)
+				okeyCount := 0
+				for i, idx := range indices {
+					tile := tiles[idx]
+					group[i] = tile
+					if tile.IsOkey {
+						okeyCount++
+					}
+				}
+				if okeyCount > 2 { //Eğer grupta 2'den fazla okey varsa, bu kombinasyonu geçersiz sayıyoruz.
+					return
+				}
+				nonOkeys := filterNonOkeys(group)
+				if isGroup(nonOkeys, okeyCount) || isSequence(nonOkeys, okeyCount) {
+					tmp := make([]*Model.Tile, len(group))
+					copy(tmp, group)
+					tmpIdx := make([]int, len(indices))
+					copy(tmpIdx, indices)
+					allGroups = append(allGroups, candidate{
+						Indices: tmpIdx,
+						Group:   tmp,
+					})
+				}
+				return
+			}
+			//Tum kombinasyonlarin alinmasi icin Recursive olarak bir sonraki derinlik ile cagrilir
+			for i := start; i <= n-(size-depth); i++ {
+				indices[depth] = i
+				generate(i+1, depth+1)
+			}
+		}
+		generate(0, 0)
+	}
+
+	// Backtracking ile en iyi kombinasyonu bul
+	var (
+		maxTilesUsed    int
+		maxScore        int
+		bestCombination [][]*Model.Tile
+	)
+
+	// En fazla taş kullanılan ve en yüksek skoru veren kombinasyon aranıyor.
+
+	var backtrack func(start int, used map[int]bool, current [][]*Model.Tile)
+	backtrack = func(start int, used map[int]bool, current [][]*Model.Tile) {
+
+		// Şu ana kadarki score hesaplaniyor.
+		usedCount := len(used)
+		score := 0
+		for _, group := range current {
+			score += sumGroupScore(group)
+		}
+
+		//Eğer bu çözüm daha iyi ise bestCombination olarak kaydediliyor.
+		if usedCount > maxTilesUsed || (usedCount == maxTilesUsed && score > maxScore) {
+			maxTilesUsed = usedCount
+			maxScore = score
+			bestCombination = deepCopyGroups(current)
+		}
+
+		//Her grup deneniyor..
+		for i := start; i < len(allGroups); i++ {
+			canUse := true
+			for _, idx := range allGroups[i].Indices {
+				//Aynı taş birden fazla kombinasyonda kullanılamaz.
+				if used[idx] {
+					canUse = false
+					break
+				}
+			}
+			if !canUse {
+				continue
+			}
+
+			//Taşları işaretle ve geri çağır
+			for _, idx := range allGroups[i].Indices {
+				used[idx] = true
+			}
+			backtrack(i+1, used, append(current, allGroups[i].Group))
+			for _, idx := range allGroups[i].Indices {
+				delete(used, idx)
+			}
+		}
+	}
+
+	backtrack(0, make(map[int]bool), [][]*Model.Tile{})
+
+	// Kullanılmayan taşları belirle
+	usedIndices := make(map[*Model.Tile]bool)
+	for _, group := range bestCombination {
+		for _, tile := range group {
+			usedIndices[tile] = true
+		}
+	}
+
+	var remaining []*Model.Tile
+	for _, tile := range tiles {
+		if !usedIndices[tile] {
+			remaining = append(remaining, tile)
+		}
+	}
+
+	// Grupları etkili sayıya göre sırala
+	//Her grup içindeki taşlar, gerçek temsil ettikleri sayıya göre sıralanır (özellikle Okey için yazdim).
+	for i, g := range bestCombination {
+		bestCombination[i] = sortGroupByEffectiveNumber(g)
+	}
+
+	return bestCombination, remaining
+}
+
+func deepCopyGroups(groups [][]*Model.Tile) [][]*Model.Tile {
+	copied := make([][]*Model.Tile, len(groups))
+	for i := range groups {
+		copied[i] = make([]*Model.Tile, len(groups[i]))
+		copy(copied[i], groups[i])
+	}
+	return copied
+}
+
+// sumGroupScore grubun toplam puanını hesaplar (toplam taş sayıları ya da puanlarını döner)
+// Okey/joker etkisi varsa CalculateTileScore ile yönetilir.
+func sumGroupScore(group []*Model.Tile) int {
+	isSeq := isSequence(filterNonOkeys(group), countOkeys(group))
+	total := 0
+	for i, tile := range group {
+		total += CalculateTileScore(tile, i, group, isSeq)
+	}
+	return total
+}
+
+func sumAllGroupsNumbers(groups [][]*Model.Tile) int {
+	total := 0
+	for _, group := range groups {
+		isSeq := isSequence(filterNonOkeys(group), countOkeys(group))
+		for index, tile := range group {
+
+			total += CalculateTileScore(tile, index, group, isSeq)
+		}
+	}
+	return total
+}
+
+// Taş Okey ise, hangi numarayı temsil ettiğini gruba göre çözümler.
+func getEffectiveNumber(tile *Model.Tile, group []*Model.Tile) int {
+	//if tile.IsOkey || tile.IsJoker {
+	if tile.IsOkey {
+		// Joker veya Okey'in neyi temsil ettiğini gruba bakarak çözümle
+		// Basit yaklaşım: Grup içindeki en yaygın (veya eksik) değeri bul
+		nonOkeys := filterNonOkeys(group)
+
+		if isGroup(nonOkeys, countOkeys(group)) {
+			// Grup ise: Aynı sayı, farklı renkler
+			for _, t := range nonOkeys {
+				return t.Number
+			}
+		} else if isSequence(nonOkeys, countOkeys(group)) {
+			// Seri ise: sırayla artan sayılar aynı renk
+			// Eksik olan sayıyı bul
+			nums := []int{}
+			for _, t := range nonOkeys {
+				nums = append(nums, t.Number)
+			}
+			sort.Ints(nums)
+			expected := nums[0]
+			for _, n := range nums {
+				if n != expected {
+					return expected // eksik olan burası
+				}
+				expected++
+			}
+			return expected // Son eksik olan sayı
+		}
+	}
+	// Normal taş ise kendi sayısı
+	return tile.Number
+}
+
+// Okey duzgun siralanmayinca yazdim. Her taşı getEffectiveNumber ile değerleyip sıraya dizer.
+func sortGroupByEffectiveNumber(group []*Model.Tile) []*Model.Tile {
+	type tileWithValue struct {
+		tile  *Model.Tile
+		value int
+	}
+
+	var withValues []tileWithValue
+	for _, t := range group {
+		withValues = append(withValues, tileWithValue{
+			tile:  t,
+			value: getEffectiveNumber(t, group),
+		})
+	}
+
+	sort.SliceStable(withValues, func(i, j int) bool {
+		return withValues[i].value < withValues[j].value
+	})
+
+	var sorted []*Model.Tile
+	for _, tw := range withValues {
+		sorted = append(sorted, tw.tile)
+	}
+	return sorted
+}

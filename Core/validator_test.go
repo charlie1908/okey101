@@ -1,6 +1,7 @@
 package Core
 
 import (
+	"fmt"
 	"okey101/Model"
 	"testing"
 )
@@ -567,5 +568,383 @@ func TestCanThrowingTileBeAddedToOpponentSets_InvalidAddition_TotalOver101(t *te
 		t.Error("Expected tile NOT to be added to any of the opponent's sets")
 	} else {
 		t.Log("PASS: Tile cannot be added to any of the opponent's sets")
+	}
+}
+
+func TestValidGroupAndRunWithNoJokers(t *testing.T) {
+	tiles := []*Model.Tile{
+		{Number: 9, Color: ColorEnum.Yellow}, // remaining
+		{Number: 4, Color: ColorEnum.Black},  // group
+		{Number: 7, Color: ColorEnum.Black},  // remaining
+		{Number: 10, Color: ColorEnum.Blue},  // run 2
+		{Number: 6, Color: ColorEnum.Yellow}, // run 1
+		{Number: 3, Color: ColorEnum.Black},  // remaining
+		{Number: 8, Color: ColorEnum.Red},    // group
+		{Number: 1, Color: ColorEnum.Yellow}, // remaining
+		{Number: 11, Color: ColorEnum.Blue},  // run 2
+		{Number: 7, Color: ColorEnum.Yellow}, // run 1
+		{Number: 5, Color: ColorEnum.Yellow}, // run 1
+		{Number: 4, Color: ColorEnum.Blue},   // group
+		{Number: 5, Color: ColorEnum.Red},    // remaining
+		{Number: 12, Color: ColorEnum.Blue},  // run 2
+		{Number: 6, Color: ColorEnum.Black},  // remaining
+		{Number: 2, Color: ColorEnum.Blue},   // remaining
+		{Number: 1, Color: ColorEnum.Red},    // remaining
+		{Number: 9, Color: ColorEnum.Blue},   // remaining
+		{Number: 7, Color: ColorEnum.Red},    // remaining
+		{Number: 4, Color: ColorEnum.Yellow}, // run 1
+		{Number: 13, Color: ColorEnum.Red},   // remaining
+	}
+
+	validGroups, remaining := SplitTilesByValidGroupsOrRuns(tiles)
+
+	totalSum := sumAllGroupsNumbers(validGroups)
+	fmt.Printf("Valid groups toplam sayısı: %d\n", totalSum)
+
+	foundGroup := false
+	foundRun := false
+
+	for i, group := range validGroups {
+		if isGroup(group, 0) {
+			foundGroup = true
+			t.Logf("Geçerli Grup #%d:", i+1)
+		} else if isSequence(group, 0) {
+			foundRun = true
+			t.Logf("Geçerli Seri #%d:", i+1)
+		}
+		for _, tile := range group {
+			t.Logf(" - Taş: Number=%d, Color=%v", tile.Number, GetEnumName(ColorEnum, tile.Color))
+		}
+	}
+
+	if !foundGroup {
+		t.Errorf("❌ Geçerli bir grup bulunamadı (aynı sayı, farklı renk).")
+	}
+	if !foundRun {
+		t.Errorf("❌ Geçerli bir sıra bulunamadı (aynı renk, ardışık).")
+	}
+	if len(remaining) == 0 {
+		t.Errorf("❌ Kalan taş kalmadı, oysa en az 1 tane geçersiz olmalıydı.")
+	} else {
+		t.Logf("✅ %d geçersiz taş remaining içinde kaldı.", len(remaining))
+	}
+}
+
+func TestValidGroupAndRunWithOkeysAndJokers(t *testing.T) {
+	tiles := []*Model.Tile{
+		{Number: 7, Color: ColorEnum.Blue},                // Group/Run aday
+		{Number: 5, Color: ColorEnum.Blue},                // Run aday
+		{Number: 7, Color: ColorEnum.Red},                 // Group/Run aday
+		{Number: 9, Color: ColorEnum.Yellow},              // Remaining
+		{Number: 6, Color: ColorEnum.Blue},                // Run aday
+		{Number: 7, Color: ColorEnum.Black},               // Group/Run aday
+		{Number: 11, Color: ColorEnum.Red},                // Run aday
+		{Number: 4, Color: ColorEnum.Blue},                // Run aday
+		{Number: 10, Color: ColorEnum.Red},                // Remaining
+		{Number: 10, Color: ColorEnum.Blue, IsOkey: true}, // Okey 1
+		{Number: 3, Color: ColorEnum.Black},               // Remaining
+		{Number: 10, Color: ColorEnum.Blue, IsOkey: true}, // Okey 2
+		{Number: 8, Color: ColorEnum.Blue, IsJoker: true}, // Joker
+		{Number: 1, Color: ColorEnum.Yellow},              // Remaining
+	}
+
+	validGroups, remaining := SplitTilesByValidGroupsOrRuns(tiles)
+
+	totalSum := sumAllGroupsNumbers(validGroups)
+	fmt.Printf("Valid groups toplam sayısı: %d\n", totalSum)
+
+	foundGroup := false
+	foundRun := false
+
+	for i, group := range validGroups {
+		if isGroup(filterNonOkeys(group), countOkeys(group)) {
+			foundGroup = true
+			t.Logf("Geçerli Grup #%d:", i+1)
+		} else if isSequence(filterNonOkeys(group), countOkeys(group)) {
+			foundRun = true
+			t.Logf("Geçerli Seri #%d:", i+1)
+		}
+		for _, tile := range group {
+			t.Logf(" - Taş: Number=%d, Color=%v, IsOkey=%v, IsJoker=%v", tile.Number, GetEnumName(ColorEnum, tile.Color), tile.IsOkey, tile.IsJoker)
+		}
+	}
+
+	if !foundGroup {
+		t.Errorf("❌ Geçerli bir grup bulunamadı (aynı sayı, farklı renk, Okey/Joker dahil).")
+	}
+	if !foundRun {
+		t.Errorf("❌ Geçerli bir sıra bulunamadı (aynı renk, ardışık, Okey/Joker dahil).")
+	}
+	if len(remaining) == 0 {
+		t.Errorf("❌ Kalan taş kalmadı, oysa en az 1 tane geçersiz olmalıydı.")
+	} else {
+		t.Logf("✅ %d geçersiz taş remaining içinde kaldı.", len(remaining))
+	}
+}
+
+func TestSplitTilesWithOkeyAndJokerInGroupsAndSequences(t *testing.T) {
+	tiles := []*Model.Tile{
+		{Number: 7, Color: ColorEnum.Red},
+		{Number: 5, Color: ColorEnum.Blue},
+		{Number: 10, Color: ColorEnum.Red},
+		{Number: 10, Color: ColorEnum.Blue},
+		{Number: 3, Color: ColorEnum.Black},
+		{Number: 6, Color: ColorEnum.Blue},
+		{Number: 3, Color: ColorEnum.Yellow},
+		{Number: 8, Color: ColorEnum.Blue},
+		{Number: 10, Color: ColorEnum.Yellow},
+		{Number: 3, Color: ColorEnum.Red},
+		{Number: 6, Color: ColorEnum.Red},
+		{Number: 8, Color: ColorEnum.Red},
+		{Number: 5, Color: ColorEnum.Yellow},
+		{Number: 7, Color: ColorEnum.Blue},
+		{Number: 1, Color: ColorEnum.Yellow},
+		{Number: 12, Color: ColorEnum.Blue},
+		{Number: 9, Color: ColorEnum.Yellow},
+		{Number: 10, Color: ColorEnum.Blue, IsOkey: true}, // Okey
+		{Number: 11, Color: ColorEnum.Blue},
+		{Number: 6, Color: ColorEnum.Yellow},
+		{Number: 10, Color: ColorEnum.Blue, IsJoker: true},
+	}
+
+	validGroups, remaining := SplitTilesByValidGroupsOrRuns(tiles)
+
+	totalSum := sumAllGroupsNumbers(validGroups)
+	fmt.Printf("Valid groups toplam sayısı: %d\n", totalSum)
+
+	foundGroup := false
+	foundSequence := false
+
+	for _, group := range validGroups {
+		if isGroup(filterNonOkeys(group), countOkeys(group)) {
+			foundGroup = true
+			t.Logf("✅ Geçerli Grup Bulundu:")
+			for _, tile := range group {
+				t.Logf("  - Taş: Number=%d, Color=%v, IsOkey=%v, IsJoker=%v", tile.Number, GetEnumName(ColorEnum, tile.Color), tile.IsOkey, tile.IsJoker)
+			}
+		} else if isSequence(filterNonOkeys(group), countOkeys(group)) {
+			foundSequence = true
+			t.Logf("✅ Geçerli Seri Bulundu:")
+			for _, tile := range group {
+				t.Logf("  - Taş: Number=%d, Color=%v, IsOkey=%v, IsJoker=%v", tile.Number, GetEnumName(ColorEnum, tile.Color), tile.IsOkey, tile.IsJoker)
+			}
+		}
+	}
+
+	if !foundGroup {
+		t.Error("❌ Geçerli grup bulunamadı.")
+	}
+	if !foundSequence {
+		t.Error("❌ Geçerli seri bulunamadı.")
+	}
+	if len(remaining) == 0 {
+		t.Error("❌ Kalan taş olmamalıydı.")
+	} else {
+		t.Logf("ℹ️ %d taş geçersiz kaldı.", len(remaining))
+	}
+}
+
+func TestSplitTilesWithOkeyAndJokerInOneSquenceAndNoGroup(t *testing.T) {
+	tiles := []*Model.Tile{
+		{Number: 5, Color: ColorEnum.Blue},
+		{Number: 9, Color: ColorEnum.Red},
+		{Number: 6, Color: ColorEnum.Blue},
+		{Number: 1, Color: ColorEnum.Black},
+		{Number: 3, Color: ColorEnum.Red},
+		{Number: 9, Color: ColorEnum.Black},
+		{Number: 2, Color: ColorEnum.Yellow},
+		{Number: 8, Color: ColorEnum.Blue, IsJoker: true}, // Joker (4,5,6 serisi için 4 yerine)
+		{Number: 9, Color: ColorEnum.Blue, IsOkey: true},  // Okey (9'lu grup için)
+		{Number: 4, Color: ColorEnum.Yellow},
+		{Number: 12, Color: ColorEnum.Red},
+		{Number: 7, Color: ColorEnum.Red},
+		{Number: 11, Color: ColorEnum.Blue},
+		{Number: 10, Color: ColorEnum.Black},
+		{Number: 13, Color: ColorEnum.Yellow},
+		{Number: 1, Color: ColorEnum.Red},
+		{Number: 3, Color: ColorEnum.Black},
+		{Number: 7, Color: ColorEnum.Black},
+		{Number: 8, Color: ColorEnum.Yellow},
+		{Number: 2, Color: ColorEnum.Blue},
+		{Number: 6, Color: ColorEnum.Yellow},
+	}
+
+	validGroups, remaining := SplitTilesByValidGroupsOrRuns(tiles)
+
+	totalSum := sumAllGroupsNumbers(validGroups)
+	fmt.Printf("Valid groups toplam sayısı: %d\n", totalSum)
+
+	foundGroup := false
+	foundSequence := false
+
+	for _, group := range validGroups {
+		if isGroup(filterNonOkeys(group), countOkeys(group)) {
+			foundGroup = true
+			t.Logf("✅ Geçerli Grup Bulundu:")
+			for _, tile := range group {
+				t.Logf("  - Taş: Number=%d, Color=%v, IsOkey=%v, IsJoker=%v", tile.Number, GetEnumName(ColorEnum, tile.Color), tile.IsOkey, tile.IsJoker)
+			}
+		} else if isSequence(filterNonOkeys(group), countOkeys(group)) {
+			foundSequence = true
+			t.Logf("✅ Geçerli Seri Bulundu:")
+			for _, tile := range group {
+				t.Logf("  - Taş: Number=%d, Color=%v, IsOkey=%v, IsJoker=%v", tile.Number, GetEnumName(ColorEnum, tile.Color), tile.IsOkey, tile.IsJoker)
+			}
+		}
+	}
+
+	/*if !foundGroup {
+		t.Error("❌ Geçerli grup bulunamadı.")
+	}*/
+	if foundGroup {
+		t.Error("❌ Geçerli grup bulundu!.")
+	}
+	if !foundSequence {
+		t.Error("❌ Geçerli seri bulunamadı.")
+	}
+	if len(remaining) == 0 {
+		t.Error("❌ Kalan taş olmamalıydı.")
+	} else {
+		t.Logf("ℹ️ %d taş geçersiz kaldı.", len(remaining))
+	}
+}
+
+func TestSplitTilesWithOkeyAndJokerInOneSquenceAndOneGroup2(t *testing.T) {
+	tiles := []*Model.Tile{
+		{Number: 9, Color: ColorEnum.Yellow},
+		{Number: 5, Color: ColorEnum.Yellow},
+		{Number: 8, Color: ColorEnum.Blue, IsJoker: true}, // Joker (normal taş gibi)
+		{Number: 9, Color: ColorEnum.Red},
+		{Number: 6, Color: ColorEnum.Yellow},
+		{Number: 9, Color: ColorEnum.Black},
+		{Number: 4, Color: ColorEnum.Yellow},
+		{Number: 9, Color: ColorEnum.Blue, IsOkey: true}, // Okey
+		{Number: 7, Color: ColorEnum.Red},
+		{Number: 6, Color: ColorEnum.Blue},
+		{Number: 3, Color: ColorEnum.Red},
+		{Number: 1, Color: ColorEnum.Black},
+		{Number: 2, Color: ColorEnum.Blue},
+		{Number: 11, Color: ColorEnum.Blue},
+		{Number: 3, Color: ColorEnum.Black},
+		{Number: 10, Color: ColorEnum.Black},
+		{Number: 13, Color: ColorEnum.Yellow},
+		{Number: 1, Color: ColorEnum.Red},
+		{Number: 7, Color: ColorEnum.Black},
+		{Number: 8, Color: ColorEnum.Yellow},
+		{Number: 2, Color: ColorEnum.Yellow},
+	}
+
+	validGroups, remaining := SplitTilesByValidGroupsOrRuns(tiles)
+
+	totalSum := sumAllGroupsNumbers(validGroups)
+	fmt.Printf("Valid groups toplam sayısı: %d\n", totalSum)
+
+	foundGroup := false
+	foundSequence := false
+
+	for _, group := range validGroups {
+		if isGroup(filterNonOkeys(group), countOkeys(group)) {
+			foundGroup = true
+			t.Logf("✅ Geçerli Grup Bulundu:")
+			for _, tile := range group {
+				t.Logf("  - Taş: Number=%d, Color=%v, IsOkey=%v, IsJoker=%v", tile.Number, GetEnumName(ColorEnum, tile.Color), tile.IsOkey, tile.IsJoker)
+			}
+		} else if isSequence(filterNonOkeys(group), countOkeys(group)) {
+			foundSequence = true
+			t.Logf("✅ Geçerli Seri Bulundu:")
+			for _, tile := range group {
+				t.Logf("  - Taş: Number=%d, Color=%v, IsOkey=%v, IsJoker=%v", tile.Number, GetEnumName(ColorEnum, tile.Color), tile.IsOkey, tile.IsJoker)
+			}
+		}
+	}
+
+	if !foundGroup {
+		t.Error("❌ Geçerli grup bulunamadı.")
+	}
+	if !foundSequence {
+		t.Error("❌ Geçerli seri bulunamadı.")
+	}
+	if len(remaining) == 0 {
+		t.Error("❌ Kalan taş olmamalıydı.")
+	} else {
+		t.Logf("ℹ️ %d taş geçersiz kaldı.", len(remaining))
+	}
+}
+
+func TestSplitTilesWithOkeyAndJokerInOneSequenceAndNoGroup(t *testing.T) {
+	tiles := []*Model.Tile{
+		// Seri (4-5-6-7 Blue)
+		{Number: 5, Color: ColorEnum.Blue},
+		{Number: 4, Color: ColorEnum.Blue},
+		{Number: 6, Color: ColorEnum.Blue},
+		{Number: 7, Color: ColorEnum.Blue},
+
+		// Grup (9'luk): 9 Red, 9 Black, 9 Joker, 9 Okey
+		{Number: 9, Color: ColorEnum.Red},
+		{Number: 9, Color: ColorEnum.Black},
+		{Number: 2, Color: ColorEnum.Red, IsJoker: true},   // Joker (9 yerine)
+		{Number: 9, Color: ColorEnum.Yellow, IsOkey: true}, // Okey (9 yerine)
+
+		// Diğer taşlar (geçersiz)
+		{Number: 1, Color: ColorEnum.Yellow},
+		{Number: 2, Color: ColorEnum.Blue},
+		{Number: 11, Color: ColorEnum.Black},
+		{Number: 13, Color: ColorEnum.Red},
+		{Number: 3, Color: ColorEnum.Black},
+		{Number: 10, Color: ColorEnum.Yellow},
+		{Number: 6, Color: ColorEnum.Red},
+		{Number: 7, Color: ColorEnum.Black},
+		{Number: 8, Color: ColorEnum.Yellow},
+		{Number: 12, Color: ColorEnum.Blue},
+		{Number: 1, Color: ColorEnum.Red},
+		{Number: 3, Color: ColorEnum.Yellow},
+		{Number: 5, Color: ColorEnum.Black},
+	}
+
+	// Geçerli kombinasyonları bul
+	validGroups, remaining := SplitTilesByValidGroupsOrRuns(tiles)
+
+	// Grup ve seri kontrolü
+	foundGroup := false
+	foundSequence := false
+
+	// Kombinasyonların sayı toplamı
+	totalSum := sumAllGroupsNumbers(validGroups)
+	t.Logf("🧮 Geçerli grupların toplam sayı değeri: %d", totalSum)
+
+	// Her kombinasyonu incele
+	for _, group := range validGroups {
+		nonOkeys := filterNonOkeys(group)
+		okeyCount := countOkeys(group)
+
+		if isGroup(nonOkeys, okeyCount) {
+			foundGroup = true
+			t.Logf("✅ Geçerli Grup Bulundu:")
+		} else if isSequence(nonOkeys, okeyCount) {
+			foundSequence = true
+			t.Logf("✅ Geçerli Seri Bulundu:")
+		} else {
+			t.Errorf("❌ Ne grup ne de seri: %+v", group)
+			continue
+		}
+
+		// Taş detaylarını yazdır
+		for _, tile := range group {
+			t.Logf("   - Taş: Number=%d, Color=%v, IsOkey=%v, IsJoker=%v",
+				tile.Number, GetEnumName(ColorEnum, tile.Color), tile.IsOkey, tile.IsJoker)
+		}
+	}
+
+	// Doğrulamalar
+	if foundGroup {
+		t.Error("❌ Hic bir grup beklenmiyordu.")
+	}
+	if !foundSequence {
+		t.Error("❌ En az bir geçerli seri bekleniyordu.")
+	}
+	if len(remaining) == 0 {
+		t.Error("❌ Kalan taş olmalıydı.")
+	} else {
+		t.Logf("ℹ️ %d taş geçersiz kaldı.", len(remaining))
 	}
 }
