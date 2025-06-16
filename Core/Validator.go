@@ -872,13 +872,19 @@ func SplitTilesByValidGroupsOrRuns_XX(tiles []*Model.Tile) ([][]*Model.Tile, []*
 func SplitTilesByValidGroupsOrRuns(tiles []*Model.Tile) ([][]*Model.Tile, []*Model.Tile) {
 	n := len(tiles)
 
-	// Renk ve sayıya göre sırala
+	// Renk ve Sayıya göre sırala => Renge gore grupla ve sirala sonra Sayiya gore sirala
 	sort.Slice(tiles, func(i, j int) bool {
 		if tiles[i].Color == tiles[j].Color {
 			return tiles[i].Number < tiles[j].Number
 		}
 		return tiles[i].Color < tiles[j].Color
 	})
+
+	//Test All Tiles Sorting Data
+	/*for _, tile := range tiles {
+		fmt.Printf("Base Tile List(Number=%v, Color=%v)\n", tile.Number, GetEnumName(ColorEnum, tile.Color))
+	}
+	fmt.Println("-----------------------")*/
 
 	type candidate struct {
 		Indices []int
@@ -901,6 +907,16 @@ func SplitTilesByValidGroupsOrRuns(tiles []*Model.Tile) ([][]*Model.Tile, []*Mod
 						okeyCount++
 					}
 				}
+
+				//Test Check All Combinations for 3 Depth
+				/*if depth == 3 {
+					for _, tile := range group {
+						fmt.Printf("tile group(Number=%v, Color=%v)\n", tile.Number, GetEnumName(ColorEnum, tile.Color))
+					}
+					fmt.Println("-----------------------")
+				}*/
+				//------------------------
+
 				if okeyCount > 2 { //Eğer grupta 2'den fazla okey varsa, bu kombinasyonu geçersiz sayıyoruz.
 					return
 				}
