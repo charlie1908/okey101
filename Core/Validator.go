@@ -484,7 +484,7 @@ func IsValidPair(tiles []*Model.Tile) bool {
 		return false
 	}
 
-	// Aynı sayı varsa, ya renkler aynı olacak ya da en az biri okey/joker olmalı
+	// Aynı sayı varsa, ya renkler aynı olacak ya da en az biri okey olmalı
 	return tile1.IsOkey || tile2.IsOkey || tile1.Color == tile2.Color
 }
 
@@ -1094,4 +1094,121 @@ func sortGroupByEffectiveNumber(group []*Model.Tile) []*Model.Tile {
 		sorted = append(sorted, tw.tile)
 	}
 	return sorted
+}
+
+func SplitTilesByValidPairs_Old(tiles []*Model.Tile) ([][]*Model.Tile, []*Model.Tile) {
+	bestCombination := make([][]*Model.Tile, 0)
+	used := make(map[int]bool)
+
+	for i := 0; i < len(tiles); i++ {
+		if used[i] {
+			continue
+		}
+
+		for j := i + 1; j < len(tiles); j++ {
+			if used[j] {
+				continue
+			}
+
+			t1 := tiles[i]
+			t2 := tiles[j]
+
+			// Okey her taşla eşleşebilir
+			if t1.IsOkey || t2.IsOkey {
+				bestCombination = append(bestCombination, []*Model.Tile{t1, t2})
+				used[i], used[j] = true, true
+				break
+			}
+
+			// Joker veya normal taş: renk ve sayı eşleşmeli
+			if t1.Color == t2.Color && t1.Number == t2.Number {
+				bestCombination = append(bestCombination, []*Model.Tile{t1, t2})
+				used[i], used[j] = true, true
+				break
+			}
+		}
+	}
+
+	// Geri kalan taşları toplama
+	var remaining []*Model.Tile
+	for i, t := range tiles {
+		if !used[i] {
+			remaining = append(remaining, t)
+		}
+	}
+
+	return bestCombination, remaining
+}
+
+func SplitTilesByValidPairs(tiles []*Model.Tile) ([][]*Model.Tile, []*Model.Tile) {
+	type pairKey struct {
+		Color  int
+		Number int
+	}
+
+	grouped := make(map[pairKey][]*Model.Tile)
+	var okeys []*Model.Tile
+
+	// Taşları sınıflandır
+	for _, tile := range tiles {
+		if tile.IsOkey {
+			okeys = append(okeys, tile)
+		} else {
+			key := pairKey{Color: tile.Color, Number: tile.Number}
+			grouped[key] = append(grouped[key], tile)
+		}
+	}
+
+	var pairs [][]*Model.Tile
+	used := make(map[*Model.Tile]bool)
+
+	// Aynı renk ve sayıya sahip taşlardan çift oluştur
+	for _, group := range grouped {
+		available := []*Model.Tile{}
+		for _, t := range group {
+			if !used[t] {
+				available = append(available, t)
+			}
+		}
+		for len(available) >= 2 {
+			pair := available[:2]
+			pairs = append(pairs, pair)
+			used[pair[0]] = true
+			used[pair[1]] = true
+			available = available[2:]
+		}
+	}
+
+	// Kalan tek taşları okey ile eşleştir
+	for _, group := range grouped {
+		//Okey yok ise donguye gerek yok
+		if len(okeys) == 0 {
+			break
+		}
+		available := []*Model.Tile{}
+		for _, t := range group {
+			if !used[t] {
+				available = append(available, t)
+			}
+		}
+		for len(available) >= 1 && len(okeys) > 0 {
+			t := available[0]
+			okey := okeys[0]
+			pairs = append(pairs, []*Model.Tile{t, okey})
+			used[t] = true
+			used[okey] = true
+			available = available[1:]
+			okeys = okeys[1:]
+		}
+	}
+
+	// Kalan taşlar
+	var remaining []*Model.Tile
+	for _, t := range tiles {
+		if !used[t] {
+			remaining = append(remaining, t)
+		}
+	}
+
+	return pairs, remaining
 }

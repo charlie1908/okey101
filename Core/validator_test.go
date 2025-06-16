@@ -948,3 +948,102 @@ func TestSplitTilesWithOkeyAndJokerInOneSequenceAndNoGroup(t *testing.T) {
 		t.Logf("ℹ️ %d taş geçersiz kaldı.", len(remaining))
 	}
 }
+
+func TestSplitTilesByValidPairs_OkeyDifferentFromPairs(t *testing.T) {
+	tiles := []*Model.Tile{
+		{Number: 7, Color: ColorEnum.Yellow},
+		{Number: 3, Color: ColorEnum.Red, IsOkey: true},
+		{Number: 5, Color: ColorEnum.Blue},
+		{Number: 1, Color: ColorEnum.Red},
+		{Number: 9, Color: ColorEnum.Black},
+		{Number: 2, Color: ColorEnum.Red},
+		{Number: 7, Color: ColorEnum.Yellow},
+		{Number: 11, Color: ColorEnum.Blue},
+		{Number: 3, Color: ColorEnum.Blue},
+		{Number: 5, Color: ColorEnum.Blue, IsJoker: true},
+		{Number: 4, Color: ColorEnum.Black},
+		{Number: 6, Color: ColorEnum.Yellow},
+		{Number: 4, Color: ColorEnum.Yellow},
+		{Number: 6, Color: ColorEnum.Yellow},
+		{Number: 8, Color: ColorEnum.Black},
+		{Number: 4, Color: ColorEnum.Blue},
+		{Number: 10, Color: ColorEnum.Red},
+		{Number: 3, Color: ColorEnum.Black},
+		{Number: 12, Color: ColorEnum.Yellow},
+		{Number: 13, Color: ColorEnum.Black},
+		{Number: 2, Color: ColorEnum.Blue},
+	}
+	pairs, remaining := SplitTilesByValidPairs(tiles)
+	if len(pairs) != 4 {
+		t.Errorf("Beklenen 4 çift, bulunan: %d", len(pairs))
+	}
+	for i, pair := range pairs {
+		if len(pair) != 2 {
+			t.Errorf("Pair %d içinde 2 taş olmalı ama %d taş var", i+1, len(pair))
+		}
+	}
+	if len(remaining) == 0 {
+		t.Errorf("Kalan taş olmalıydı ama hiç kalmamış")
+	}
+	for i, pair := range pairs {
+		t.Logf("Pair %d:", i+1)
+		for _, tile := range pair {
+			t.Logf("  - Taş: Number=%d, Color=%v, IsOkey=%v, IsJoker=%v", tile.Number, GetEnumName(ColorEnum, tile.Color), tile.IsOkey, tile.IsJoker)
+		}
+	}
+	t.Logf("Kalan taş sayısı: %d", len(remaining))
+	for _, tile := range remaining {
+		t.Logf("  - Taş: Number=%d, Color=%v, IsOkey=%v, IsJoker=%v", tile.Number, GetEnumName(ColorEnum, tile.Color), tile.IsOkey, tile.IsJoker)
+	}
+}
+
+func TestSplitTilesByValidPairs_WithJokerNoOkey(t *testing.T) {
+	tiles := []*Model.Tile{
+		{Number: 2, Color: ColorEnum.Yellow},
+		{Number: 7, Color: ColorEnum.Red},
+		{Number: 5, Color: ColorEnum.Blue, IsJoker: true}, // Joker
+		{Number: 13, Color: ColorEnum.Black},
+		{Number: 11, Color: ColorEnum.Blue},
+		{Number: 7, Color: ColorEnum.Yellow},
+		{Number: 9, Color: ColorEnum.Yellow},
+		{Number: 10, Color: ColorEnum.Black},
+		{Number: 6, Color: ColorEnum.Black},
+		{Number: 7, Color: ColorEnum.Blue},
+		{Number: 8, Color: ColorEnum.Red},
+		{Number: 3, Color: ColorEnum.Yellow},
+		{Number: 12, Color: ColorEnum.Red},
+		{Number: 2, Color: ColorEnum.Blue},
+		{Number: 5, Color: ColorEnum.Yellow},
+		{Number: 4, Color: ColorEnum.Black},
+		{Number: 9, Color: ColorEnum.Yellow},
+		{Number: 10, Color: ColorEnum.Blue},
+		{Number: 5, Color: ColorEnum.Red},
+		{Number: 4, Color: ColorEnum.Black},
+		{Number: 12, Color: ColorEnum.Red},
+	}
+
+	pairs, remaining := SplitTilesByValidPairs(tiles)
+
+	expectedPairCount := 3
+	if len(pairs) != expectedPairCount {
+		t.Errorf("❌ Beklenen %d çift, bulunan: %d", expectedPairCount, len(pairs))
+	}
+
+	for i, pair := range pairs {
+		if len(pair) != 2 {
+			t.Errorf("❌ Pair %d içinde 2 taş olmalı ama %d taş var", i+1, len(pair))
+		} else {
+			t.Logf("✅ Pair %d:", i+1)
+			for _, tile := range pair {
+				t.Logf("  - Taş: Number=%d, Color=%v, IsJoker=%v",
+					tile.Number, GetEnumName(ColorEnum, tile.Color), tile.IsJoker)
+			}
+		}
+	}
+
+	t.Logf("Kalan taş sayısı: %d", len(remaining))
+	for _, tile := range remaining {
+		t.Logf("  - Taş: Number=%d, Color=%v, IsJoker=%v",
+			tile.Number, GetEnumName(ColorEnum, tile.Color), tile.IsJoker)
+	}
+}
