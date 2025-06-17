@@ -21,7 +21,6 @@ const (
 	} 
 }
 `
-
 	okey101AuditMappings = ` 
 { 
 	"aliases":{
@@ -33,6 +32,7 @@ const (
 	}, 
 	"mappings":{ 
 		"properties":{ 
+			"LogID": { "type": "keyword" },
 			"DateTime": { "type": "date" },
 			"TimeStamp": { "type": "date", "format": "strict_date_optional_time||epoch_millis" },
 			"OrderID": { "type": "long" },
@@ -44,26 +44,36 @@ const (
 			"ModuleName": { "type": "keyword" },
 			"GameID": { "type": "keyword" },
 			"RoomID": { "type": "keyword" },
-			"Tiles": { 
-				"type": "nested", 
-				"properties":{ 
+			"MatchID": { "type": "keyword" },
+			"SessionID": { "type": "keyword" },
+			"Tiles": {
+				"type": "nested",
+				"properties": {
 					"ID": { "type": "integer" },
 					"Number": { "type": "integer" },
 					"Color": { "type": "integer" },
 					"IsJoker": { "type": "boolean" },
-					"IsOkey": { "type": "boolean" }
+					"IsOkey": { "type": "boolean" },
+					"IsOpend": { "type": "boolean" },
+					"GroupID": { "type": "integer", "null_value": -1 },
+					"OrderID": { "type": "integer", "null_value": -1 },
+					"X": { "type": "integer", "null_value": -1 },
+					"Y": { "type": "integer", "null_value": -1 }
 				}
 			},
 			"PenaltyReasonID": { "type": "integer" },
       		"PenaltyReason": { "type": "keyword" },
       		"PenaltyMultiplier": { "type": "float" },
       		"PenaltyPoints": { "type": "integer" },
+			"ScoreBefore": { "type": "integer" },
+			"ScoreAfter": { "type": "integer" },
+			"ScoreDelta": { "type": "integer" },
 			"HadOkeyTile": { "type": "boolean" },
       		"OpenedFivePairsButLost": { "type": "boolean" },
       		"OkeyUsedInFinish": { "type": "boolean" },
 			"ReconnectDelaySeconds": { "type": "float" },
 			"GameDurationSeconds": { "type": "float" },
-            "PlayerReactionTimeSeconds": { "type": "float" }, 
+            "PlayerReactionTimeSeconds": { "type": "float" },
 			"IPAddress": { "type": "ip" },
 			"Browser": { "type": "keyword" },
 			"Device": { "type": "keyword" },

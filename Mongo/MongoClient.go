@@ -81,6 +81,11 @@ func ConvertCoreTilesToMongoTiles(coreTiles Core.TileBag) []Tile {
 			Color:   t.Color,
 			IsJoker: t.IsJoker,
 			IsOkey:  t.IsOkey,
+			IsOpend: t.IsOpend,
+			GroupID: t.GroupID,
+			OrderID: t.OrderID,
+			X:       t.X,
+			Y:       t.Y,
 		}
 	}
 	return mongoTiles

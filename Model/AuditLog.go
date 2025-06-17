@@ -3,6 +3,7 @@ package Model
 import "time"
 
 type AuditLog struct {
+	LogID     string    `json:"LogID"`
 	DateTime  time.Time `json:"DateTime"`
 	Timestamp time.Time `json:"TimeStamp"` // Mapping'teki "TimeStamp" ile birebir aynı
 
@@ -14,8 +15,10 @@ type AuditLog struct {
 	Message    string `json:"Message"`
 	ModuleName string `json:"ModuleName"`
 
-	GameID string `json:"GameID,omitempty"`
-	RoomID string `json:"RoomID,omitempty"`
+	GameID    string `json:"GameID,omitempty"`
+	RoomID    string `json:"RoomID,omitempty"`
+	MatchID   string `json:"MatchID,omitempty"`   // Yeni: Oturum eşleme için
+	SessionID string `json:"SessionID,omitempty"` // Yeni: Kullanıcıya özel session
 
 	Tiles *[]Tile `json:"Tiles,omitempty"`
 
@@ -23,6 +26,10 @@ type AuditLog struct {
 	PenaltyReason     *string  `json:"PenaltyReason,omitempty"`
 	PenaltyMultiplier *float64 `json:"PenaltyMultiplier,omitempty"`
 	PenaltyPoints     *int     `json:"PenaltyPoints,omitempty"`
+
+	ScoreBefore *int `json:"ScoreBefore,omitempty"`
+	ScoreAfter  *int `json:"ScoreAfter,omitempty"`
+	ScoreDelta  *int `json:"ScoreDelta,omitempty"`
 
 	HadOkeyTile            *bool `json:"HadOkeyTile,omitempty"`
 	OpenedFivePairsButLost *bool `json:"OpenedFivePairsButLost,omitempty"`

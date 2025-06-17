@@ -10,6 +10,9 @@ type RoomState struct {
 	CreatedAt   int64
 }
 type PlayerState struct {
+	RoomID       string
+	GameID       string
+	UserID       string
 	UserName     string
 	PlayerTiles  []Tile
 	DiscardTiles []Tile

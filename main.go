@@ -55,35 +55,51 @@ func main() {
 		defer client.Disconnect(ctx)
 		// LogEntry oluştur
 		entry := Mongo.LogEntry{
-			DateTime:                  time.Now(),
-			TimeStamp:                 time.Now(),
-			OrderID:                   1001,
-			UserName:                  "player1",
-			UserID:                    42,
-			ActionType:                1,
-			ActionName:                "StartGame",
-			Message:                   "Oyun başladı",
-			ModuleName:                "GameModule",
-			GameID:                    "game123",
-			RoomID:                    "room456",
-			Tiles:                     Mongo.ConvertCoreTilesToMongoTiles(*player1), // *[]Tile => []Tile
-			PenaltyReasonID:           0,
-			PenaltyReason:             "",
-			PenaltyMultiplier:         1.0,
-			PenaltyPoints:             0,
-			HadOkeyTile:               true,
-			OpenedFivePairsButLost:    false,
-			OkeyUsedInFinish:          false,
-			ReconnectDelaySeconds:     0,
-			GameDurationSeconds:       360.5,
-			PlayerReactionTimeSeconds: 1.75,
-			IPAddress:                 "192.168.1.15",
-			Browser:                   "Chrome",
-			Device:                    "PC",
-			Platform:                  "Windows",
-			ErrorCode:                 0,
+			LogID:     "log-1001-xyz", // Benzersiz log ID (UUID önerilir)
+			DateTime:  time.Now(),
+			TimeStamp: time.Now(),
+
+			OrderID:    1001,
+			UserID:     42,
+			UserName:   "player1",
+			ActionType: Core.ActionType.StartGame,
+			ActionName: Core.GetEnumName(Core.ActionType, Core.ActionType.StartGame),
+			Message:    "Oyun başladı",
+			ModuleName: "GameModule",
+
+			GameID:    "game123",
+			RoomID:    "room456",
+			MatchID:   "match-abc-789",
+			SessionID: "session-def-456",
+
+			Tiles: Mongo.ConvertCoreTilesToMongoTiles(*player1),
+
+			PenaltyReasonID:   Core.IntPtr(0),
+			PenaltyReason:     Core.StringPtr(""),
+			PenaltyMultiplier: Core.FloatPtr(1.0),
+			PenaltyPoints:     Core.IntPtr(0),
+
+			ScoreBefore: Core.IntPtr(1200),
+			ScoreAfter:  Core.IntPtr(1210),
+			ScoreDelta:  Core.IntPtr(10),
+
+			HadOkeyTile:            Core.BoolPtr(true),
+			OpenedFivePairsButLost: Core.BoolPtr(false),
+			OkeyUsedInFinish:       Core.BoolPtr(false),
+
+			ReconnectDelaySeconds:     Core.FloatPtr(0),
+			GameDurationSeconds:       Core.FloatPtr(360.5),
+			PlayerReactionTimeSeconds: Core.FloatPtr(1.75),
+
+			IPAddress: "192.168.1.15",
+			Browser:   "Chrome",
+			Device:    "PC",
+			Platform:  "Windows",
+
+			ErrorCode: Core.IntPtr(0),
 			ExtraData: map[string]interface{}{
 				"customField": "customValue",
+				"gameMode":    "ranked",
 			},
 		}
 
@@ -132,38 +148,56 @@ func main() {
 	var takenTile = tiles.TakeOneFromBag((*[]Model.Tile)(player1))
 	// Add ElasticLog
 	auditLog := Model.AuditLog{
-		DateTime:   time.Now(),
-		Timestamp:  time.Now(),
-		OrderID:    11,   // Oyuna özel bir ID
-		UserID:     9876, // Oynayan oyuncunun ID'si
+		LogID:     "log-uuid-0002", // Yeni: eşsiz log ID'si (örnek UUID formatı)
+		DateTime:  time.Now(),
+		Timestamp: time.Now(),
+
+		OrderID:    11,
+		UserID:     9876,
 		UserName:   "player1",
 		ActionType: int(Core.ActionType.DrawFromMiddle),
 		ActionName: Core.GetEnumName(Core.ActionType, Core.ActionType.DrawFromMiddle),
-		Message:    fmt.Sprintf("Player %s took a tile from the bag", "player1"),
+		Message:    fmt.Sprintf("Player %s took tile %d from the bag", "player1", takenTile.Number),
 		ModuleName: "TileBag",
 
-		GameID: "game-abc-123",
-		RoomID: "room-xyz-789",
+		GameID:    "game-abc-123",
+		RoomID:    "room-xyz-789",
+		MatchID:   "match-5555", // Oturum izleme için önerilir
+		SessionID: "session-7777",
 
-		Tiles: &[]Model.Tile{takenTile}, // Alınan taşın bilgisi loglanır
+		Tiles: &[]Model.Tile{
+			{
+				ID:      takenTile.ID,
+				Number:  takenTile.Number,
+				Color:   takenTile.Color,
+				IsJoker: takenTile.IsJoker,
+				IsOkey:  takenTile.IsOkey,
+				IsOpend: takenTile.IsOpend,
+			},
+		},
 
-		IPAddress:                 "192.168.1.100", // Mapping'e göre 'ClientIP' değil, 'IPAddress'
-		Browser:                   "Chrome",
-		Device:                    "Desktop",
-		Platform:                  "Windows",
+		ScoreBefore: Core.IntPtr(980),
+		ScoreAfter:  Core.IntPtr(980), // Orta taş alma skor değiştirmez
+		ScoreDelta:  Core.IntPtr(0),
+
+		HadOkeyTile:            Core.BoolPtr(false),
+		OpenedFivePairsButLost: nil,
+		OkeyUsedInFinish:       nil,
+
 		PlayerReactionTimeSeconds: Core.FloatPtr(1.2),
-		GameDurationSeconds:       Core.FloatPtr(0),
-		PenaltyReasonID:           nil,
-		PenaltyReason:             nil,
-		PenaltyMultiplier:         nil,
-		PenaltyPoints:             nil,
-		HadOkeyTile:               nil,
-		OpenedFivePairsButLost:    nil,
-		OkeyUsedInFinish:          nil,
+		GameDurationSeconds:       Core.FloatPtr(45.0), // Örnek süre
+		ReconnectDelaySeconds:     nil,
+
+		IPAddress: "192.168.1.100",
+		Browser:   "Chrome",
+		Device:    "Desktop",
+		Platform:  "Windows",
 
 		ErrorCode: nil,
 		ExtraData: map[string]interface{}{
 			"custom_info": "example",
+			"bag_count":   38, // Kalan taş sayısı gibi faydalı veri
+			"round":       4,  // Oyun turu
 		},
 	}
 
@@ -188,40 +222,57 @@ func main() {
 	}
 	// Add ElasticLog for DropTile
 	auditLogDrop := Model.AuditLog{
-		DateTime:   time.Now(),
-		Timestamp:  time.Now(),
-		OrderID:    12,   // Yeni unique işlem ID'si
-		UserID:     9876, // Oyuncu ID'si
+		LogID:     "log-uuid-0001", // Benzersiz log ID'si (örnek UUID formatı)
+		DateTime:  time.Now(),
+		Timestamp: time.Now(),
+
+		OrderID:    12, // İşlem sırası
+		UserID:     9876,
 		UserName:   "player1",
 		ActionType: int(Core.ActionType.DiscardTile),
 		ActionName: Core.GetEnumName(Core.ActionType, Core.ActionType.DiscardTile),
-		Message:    fmt.Sprintf("Player %s dropped a tile", "player1"),
+		Message:    fmt.Sprintf("Player %s dropped tile %d", "player1", dropTile.Number),
 		ModuleName: "DropLogic",
 
-		GameID: "game-abc-123",
-		RoomID: "room-xyz-789",
+		GameID:    "game-abc-123",
+		RoomID:    "room-xyz-789",
+		MatchID:   "match-5555",   // Yeni
+		SessionID: "session-7777", // Yeni
 
-		Tiles: &[]Model.Tile{dropTile}, // Atılan taş loglanır
+		Tiles: &[]Model.Tile{
+			{
+				ID:      42,
+				Number:  dropTile.Number,
+				Color:   dropTile.Color,
+				IsJoker: false,
+				IsOkey:  false,
+				IsOpend: false,
+			},
+		},
 
-		IPAddress:                 "192.168.1.100",
-		Browser:                   "Chrome",
-		Device:                    "Desktop",
-		Platform:                  "Windows",
-		PlayerReactionTimeSeconds: Core.FloatPtr(2.3),
-		GameDurationSeconds:       Core.FloatPtr(120.0),
+		ScoreBefore: Core.IntPtr(980), // Örnek skor
+		ScoreAfter:  Core.IntPtr(980), // Taş atımı puanı etkilemedi diyelim
+		ScoreDelta:  Core.IntPtr(0),
 
-		PenaltyReasonID:        nil,
-		PenaltyReason:          nil,
-		PenaltyMultiplier:      nil,
-		PenaltyPoints:          nil,
-		HadOkeyTile:            nil,
+		HadOkeyTile:            Core.BoolPtr(false),
 		OpenedFivePairsButLost: nil,
 		OkeyUsedInFinish:       nil,
 
+		PlayerReactionTimeSeconds: Core.FloatPtr(2.3),
+		GameDurationSeconds:       Core.FloatPtr(120.0),
+		ReconnectDelaySeconds:     nil,
+
+		IPAddress: "192.168.1.100",
+		Browser:   "Chrome",
+		Device:    "Desktop",
+		Platform:  "Windows",
+
 		ErrorCode: nil,
+
 		ExtraData: map[string]interface{}{
-			"position": 3,
-			"source":   "hand",
+			"position": 3,      // 3. oyuncu
+			"source":   "hand", // Elinden attı
+			"tileSet":  "main", // Opsiyonel detay
 		},
 	}
 

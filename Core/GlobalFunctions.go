@@ -269,6 +269,16 @@ func FloatPtr(f float64) *float64 {
 	return &f
 }
 
+func IntPtr(i int) *int {
+	return &i
+}
+
+func BoolPtr(b bool) *bool {
+	return &b
+}
+
+func StringPtr(s string) *string { return &s }
+
 var Game GameGroupState
 
 func ResetGame() {
