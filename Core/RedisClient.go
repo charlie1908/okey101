@@ -14,6 +14,7 @@ import (
 	"github.com/ulule/limiter/v3"
 	redisStore "github.com/ulule/limiter/v3/drivers/store/redis"
 	"log"
+	"okey101/Model"
 	shared "okey101/Shared"
 	"time"
 )
@@ -92,16 +93,19 @@ func GenerateRedisKey(userName string, isRefreshToken bool) string {
 	return userName + ":Token"
 }
 
+// Oda genel durumu (oyunun tamamı için global durum)
 func GenerateRoomStateRedisKey(roomID string) string {
-	return fmt.Sprintf("room:%s:state", roomID)
+	return fmt.Sprintf("room:%s:game_state", roomID)
 }
 
-func GeneratePlayerStateRedisKey(roomID, userName string) string {
-	return fmt.Sprintf("room:%s:player:%s", roomID, userName)
+// Oyuncunun özel (gizli) durumu – sadece kendi elindeki taşlar
+func GeneratePlayerPrivateStateRedisKey(roomID, userID string) string {
+	return fmt.Sprintf("room:%s:player:%s:private", roomID, userID)
 }
 
-func GenerateRoomDiscardZoneKey(roomID, userName string) string {
-	return fmt.Sprintf("room:%s:player:%s:discard", roomID, userName)
+// Oyuncunun herkese açık durumu – diğer oyuncuların görebileceği bilgiler
+func GeneratePlayerPublicStateRedisKey(roomID, userID string) string {
+	return fmt.Sprintf("room:%s:player:%s:public", roomID, userID)
 }
 
 func GetGlobalLimiter() *limiter.Limiter {
@@ -122,4 +126,59 @@ func GetGlobalLimiter() *limiter.Limiter {
 
 	globalLimiter := limiter.New(store, rate)
 	return globalLimiter
+}
+
+// Tüm verileri Redis'e kaydeder
+func SaveGameToRedis(roomState *Model.RoomState, privateStates []Model.PlayerPrivateState, publicStates []Model.PlayerPublicState) error {
+	client := GetRedisClient()
+
+	// Oda genel durumu
+	if err := client.SetKey(GenerateRoomStateRedisKey(roomState.RoomID), roomState, 30*time.Minute); err != nil {
+		return err
+	}
+
+	// Public durumlar ayrı ayrı tutulur
+	for _, pub := range publicStates {
+		pubKey := GeneratePlayerPublicStateRedisKey(roomState.RoomID, pub.UserID)
+		if err := client.SetKey(pubKey, pub, 30*time.Minute); err != nil {
+			return err
+		}
+	}
+
+	// Private durumlar
+	for _, pvt := range privateStates {
+		pvtKey := GeneratePlayerPrivateStateRedisKey(roomState.RoomID, pvt.UserID)
+		if err := client.SetKey(pvtKey, pvt, 30*time.Minute); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Oyuna reconnect eden bir kullanıcı için state’leri geri döner
+func LoadGameForPlayer(roomID, userID string) (*Model.RoomState, *Model.PlayerPrivateState, []Model.PlayerPublicState, error) {
+	client := GetRedisClient()
+
+	var room Model.RoomState
+	if err := client.GetKey(GenerateRoomStateRedisKey(roomID), &room); err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Oyuncunun kendi private state'i
+	var private Model.PlayerPrivateState
+	if err := client.GetKey(GeneratePlayerPrivateStateRedisKey(roomID, userID), &private); err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Diğer oyuncuların public state'leri
+	var publicStates []Model.PlayerPublicState
+	for _, basic := range room.Players { // Artık PlayerBasicInfo var
+		var ps Model.PlayerPublicState
+		if err := client.GetKey(GeneratePlayerPublicStateRedisKey(roomID, basic.UserID), &ps); err == nil {
+			publicStates = append(publicStates, ps)
+		}
+	}
+
+	return &room, &private, publicStates, nil
 }

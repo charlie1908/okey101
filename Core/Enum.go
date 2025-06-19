@@ -4,6 +4,8 @@ import "reflect"
 
 var ColorEnum = newcolorEnum()
 var ActionType = newActionType()
+var DrawSource = newdrawSource()
+var GamePhase = newgamePhase()
 var PenaltyType = newPenaltyType()
 
 func newcolorEnum() *color {
@@ -78,6 +80,32 @@ type penaltyType struct {
 	FivePairsButNotWin int
 	DoubleDiscard      int
 	TimeoutPenalty     int
+}
+
+func newdrawSource() *drawSource {
+	return &drawSource{
+		TileBag: 1,
+		Discard: 2,
+	}
+}
+
+type drawSource struct {
+	TileBag int
+	Discard int
+}
+
+func newgamePhase() *gamePhase {
+	return &gamePhase{
+		GamePhaseWaiting:    "waiting",
+		GamePhaseInProgress: "in_progress",
+		GamePhaseFinished:   "finished",
+	}
+}
+
+type gamePhase struct {
+	GamePhaseWaiting    string
+	GamePhaseInProgress string
+	GamePhaseFinished   string
 }
 
 func GetEnumName(enum interface{}, value int) string {

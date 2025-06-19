@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"okey101/Model"
 	"testing"
+	"time"
 )
 
 // Test Group gecerli olmali.
@@ -110,9 +111,14 @@ func TestCanOpenTiles_InvalidScore(t *testing.T) {
 	}
 }
 
+// Test CanOpenTiles And SAVE REDIS USER STATE
 // Bu ESKI => Gosterge Mavi 4, Mavi 5 = Okey, Joker = Mavi 5
 // GECERLI GUNCEL => Gosterge Mavi 11, Mavi 12 = Okey, Joker = Mavi 12
 func TestCanOpenTilesWithOkeyAndJoker_Valid(t *testing.T) {
+	roomID := "room123"
+	userID := "user456"
+	userName := "TestPlayer"
+
 	opened := [][]*Model.Tile{
 		{
 			{Number: 10, Color: ColorEnum.Blue},
@@ -148,7 +154,97 @@ func TestCanOpenTilesWithOkeyAndJoker_Valid(t *testing.T) {
 		t.Error("Expected valid opening with total >= 101")
 	} else {
 		t.Log("PASS Valid Opening")
+
+		// REDIS TEST SAVE RoomState, PlayerPrivateState, PlayerPublicState
+		err := SaveOpenedGroupsToRedis(roomID, userID, userName, opened)
+		if err != nil {
+			t.Errorf("Failed to save opened groups to Redis: %v", err)
+		}
 	}
+}
+
+func SaveOpenedGroupsToRedis(roomID, userID, userName string, opened [][]*Model.Tile) error {
+	//client := GetRedisClient()
+
+	// []*Tile → []Tile (deep copy)
+	var openedGroups [][]Model.Tile
+	for _, group := range opened {
+		var flat []Model.Tile
+		for _, tile := range group {
+			if tile != nil {
+				flat = append(flat, *tile)
+			}
+		}
+		openedGroups = append(openedGroups, flat)
+	}
+	// 1. PlayerPublicState'i Redis'e yaz. Tasla acildi Player Public bilgisi degisti..
+	public := Model.PlayerPublicState{
+		UserID:       userID,
+		UserName:     userName,
+		DiscardTiles: nil,
+		OpenedGroups: openedGroups,
+		Score:        0,
+		IsConnected:  true,
+		IsFinished:   false,
+		LastDrawTile: nil,
+	}
+
+	/*keyPlayerPublic := GeneratePlayerPublicStateRedisKey(roomID, userID)
+	err := client.SetKey(keyPlayerPublic, public, 30*time.Minute)
+	if err != nil {
+		return err
+	}*/
+
+	// 2. PlayerPrivateState'i Redis'e yaz => Tas acilinca eldei taslar azaldi..
+	private := Model.PlayerPrivateState{
+		RoomID:   roomID,
+		GameID:   "game789",
+		UserID:   userID,
+		UserName: userName,
+		PlayerTiles: []Model.Tile{
+			{Number: 5, Color: ColorEnum.Yellow},
+			{Number: 5, Color: ColorEnum.Red},
+			{Number: 5, Color: ColorEnum.Blue},
+			{Number: 11, Color: ColorEnum.Blue},
+			{Number: 12, Color: ColorEnum.Blue, IsOkey: true},
+		},
+	}
+
+	/*keyPrivate := GeneratePlayerPrivateStateRedisKey(roomID, userID)
+	if err := client.SetKey(keyPrivate, private, 30*time.Minute); err != nil {
+		return err
+	}*/
+
+	//Bu opsiyonel yazildi..
+	// 3. RoomState sahte verisi oluşturulup Redis’e yazılıyor
+	roomState := Model.RoomState{
+		RoomID:    "room123",
+		GameID:    "game789",
+		Indicator: Model.Tile{Number: 11, Color: ColorEnum.Blue},               // Gösterge taşı
+		OkeyTile:  Model.Tile{Number: 12, Color: ColorEnum.Blue, IsOkey: true}, // Okey taşı
+		TileBag: []Model.Tile{
+			{Number: 1, Color: ColorEnum.Red},
+			{Number: 2, Color: ColorEnum.Red},
+			{Number: 3, Color: ColorEnum.Red},
+			{Number: 4, Color: ColorEnum.Red},
+		}, // Sahte taş torbası
+		CurrentTurn:   "user456", // TestPlayer’ın sırası
+		TurnStartTime: time.Now().UnixMilli(),
+		CreatedAt:     time.Now().UnixMilli(),
+		GamePhase:     "in_progress",
+		WinnerID:      "", // henüz kazanan yok
+
+		Players: []Model.PlayerBasicInfo{
+			{UserID: "user456", UserName: "TestPlayer"},
+			{UserID: "user123", UserName: "Opponent1"},
+			{UserID: "user789", UserName: "Opponent2"},
+			{UserID: "user321", UserName: "Opponent3"},
+		},
+	}
+
+	/*keyRoom := GenerateRoomStateRedisKey(roomID)
+	return client.SetKey(keyRoom, roomState, 30*time.Minute)*/
+	return SaveGameToRedis(&roomState, []Model.PlayerPrivateState{private}, []Model.PlayerPublicState{public})
 }
 
 // GECERLI GUNCEL => Kirmizi 5, Kirmizi 6 = Okey, Joker = Kirmizi 6
