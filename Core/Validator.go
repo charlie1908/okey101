@@ -346,11 +346,10 @@ func CanOpenTilesWithRemaining(tiles []*Model.Tile, opened [][]*Model.Tile) (rem
 		}
 	}
 	var result = totalScore >= 101
-	remainList = getRemainingInOpenedTiles(tiles, opened)
 	//---------
 	//Acilan Tum Taslar Opened olur!
 	if result {
-		SetOpentiles(opened)
+		remainList = getRemainingInOpenedTiles(tiles, opened)
 	}
 	//Bayramin istegi ile kaldirildi.
 	//Acilan Tum Taslar Opened olur!
