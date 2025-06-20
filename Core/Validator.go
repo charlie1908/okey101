@@ -324,6 +324,74 @@ func CanOpenTiles(opened [][]*Model.Tile) bool {
 	return result
 }
 
+func CanOpenTilesWithRemaining(tiles []*Model.Tile, opened [][]*Model.Tile) (remaining []*Model.Tile, score int, error bool) {
+	totalScore := 0
+	var remainList []*Model.Tile
+	for _, group := range opened {
+
+		//Iclerinden Acilan Var Ise Hata Verir..
+		if HasOpenTail(group...) {
+			return remainList, 0, false
+		}
+
+		//Once gecerliligi kontrol et!
+		if !IsValidGroupOrRun(group) {
+			return remainList, 0, false
+		}
+
+		isSeq := isSequence(filterNonOkeys(group), countOkeys(group))
+		for index, tile := range group {
+
+			totalScore += CalculateTileScore(tile, index, group, isSeq)
+		}
+	}
+	var result = totalScore >= 101
+	remainList = getRemainingInOpenedTiles(tiles, opened)
+	//---------
+	//Acilan Tum Taslar Opened olur!
+	if result {
+		SetOpentiles(opened)
+	}
+	//Bayramin istegi ile kaldirildi.
+	//Acilan Tum Taslar Opened olur!
+	/*if result {
+		SetOpentiles(opened)
+	}*/
+	//---------
+	return remainList, totalScore, result
+}
+
+func getRemainingInOpenedTiles(tiles []*Model.Tile, opened [][]*Model.Tile) (remaining []*Model.Tile) {
+	type pairKey struct {
+		Color  int
+		Number int
+	}
+
+	used := make(map[pairKey][]*Model.Tile)
+	var remainList []*Model.Tile
+
+	// Açılmış taşları key'e göre gruplandır
+	for _, group := range opened {
+		for _, tile := range group {
+			key := pairKey{Color: tile.Color, Number: tile.Number}
+			used[key] = append(used[key], tile)
+		}
+	}
+
+	// Elimizdeki taşlardan açılmayanları bul
+	for _, tile := range tiles {
+		key := pairKey{Color: tile.Color, Number: tile.Number}
+		if usedList, ok := used[key]; ok && len(usedList) > 0 {
+			// Bu taş kullanıldı, bu taşı tüket ve listeden cikar
+			used[key] = usedList[1:]
+		} else {
+			// Bu taş hiç kullanılmamış
+			remainList = append(remainList, tile)
+		}
+	}
+	return remainList
+}
+
 // Acilan Tas gurubunun IsOpened'ini true olarak ata.
 func SetOpentiles(opened [][]*Model.Tile) {
 	for _, group := range opened {

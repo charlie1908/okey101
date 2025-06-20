@@ -1143,3 +1143,123 @@ func TestSplitTilesByValidPairs_WithJokerNoOkey(t *testing.T) {
 			tile.Number, GetEnumName(ColorEnum, tile.Color), tile.IsJoker)
 	}
 }
+
+func TestGetRemainingInTiles_Valid(t *testing.T) {
+	tiles := []*Model.Tile{
+		{Color: ColorEnum.Black, Number: 1},
+		{Color: ColorEnum.Black, Number: 2},
+		{Color: ColorEnum.Black, Number: 3},
+
+		{Color: ColorEnum.Blue, Number: 5},
+		{Color: ColorEnum.Blue, Number: 5},
+
+		{Color: ColorEnum.Yellow, Number: 11},
+		{Color: ColorEnum.Yellow, Number: 12},
+		{Color: ColorEnum.Yellow, Number: 13},
+
+		{Color: ColorEnum.Red, Number: 7},
+		{Color: ColorEnum.Red, Number: 8},
+		{Color: ColorEnum.Red, Number: 9},
+
+		{Color: ColorEnum.Black, Number: 8},
+		{Color: ColorEnum.Black, Number: 8},
+
+		{Color: ColorEnum.Red, Number: 1},
+		{Color: ColorEnum.Blue, Number: 1},
+		{Color: ColorEnum.Yellow, Number: 1},
+
+		{Color: ColorEnum.Red, Number: 6},
+		{Color: ColorEnum.Red, Number: 10},
+
+		{Color: ColorEnum.Blue, Number: 7},
+		{Color: ColorEnum.Yellow, Number: 3},
+		{Color: ColorEnum.Blue, Number: 11},
+	}
+
+	opened := [][]*Model.Tile{
+		// Açılmışlar:
+		{{Number: 1, Color: ColorEnum.Black}, {Number: 2, Color: ColorEnum.Black}, {Number: 3, Color: ColorEnum.Black}},
+		{{Number: 5, Color: ColorEnum.Blue}, {Number: 5, Color: ColorEnum.Blue}},
+		{{Number: 11, Color: ColorEnum.Yellow}, {Number: 12, Color: ColorEnum.Yellow}, {Number: 13, Color: ColorEnum.Yellow}},
+	}
+
+	remaining := getRemainingInOpenedTiles(tiles, opened)
+
+	if len(remaining) != 13 {
+		t.Errorf("Expected 13 remaining tiles, got %d", len(remaining))
+	} else {
+		t.Log("PASS TestGetRemainingInTiles_Valid - 13 remaining tiles")
+	}
+
+	// (İsteğe bağlı) içerik doğrulaması yapılabilir
+}
+
+func TestCanOpenTilesWithRemaining_Valid(t *testing.T) {
+	tiles := []*Model.Tile{
+		// Per: 1 kırmızı, mavi, sarı
+		{Number: 1, Color: ColorEnum.Red},
+		{Number: 1, Color: ColorEnum.Blue},
+		{Number: 1, Color: ColorEnum.Yellow},
+
+		// Seri: 3,4,5 kırmızı
+		{Number: 3, Color: ColorEnum.Red},
+		{Number: 4, Color: ColorEnum.Red},
+		{Number: 5, Color: ColorEnum.Red},
+
+		// Per: 7 sarı, kırmızı, mavi
+		{Number: 7, Color: ColorEnum.Yellow},
+		{Number: 7, Color: ColorEnum.Red},
+		{Number: 7, Color: ColorEnum.Blue},
+
+		// Seri: 8,9,10 siyah
+		{Number: 8, Color: ColorEnum.Black},
+		{Number: 9, Color: ColorEnum.Black},
+		{Number: 10, Color: ColorEnum.Black},
+
+		// Seri: 10,11,12 kırmızı
+		{Number: 10, Color: ColorEnum.Red},
+		{Number: 11, Color: ColorEnum.Red},
+		{Number: 12, Color: ColorEnum.Red},
+
+		// Per: 13 kırmızı, mavi, sarı
+		{Number: 13, Color: ColorEnum.Red},
+		{Number: 13, Color: ColorEnum.Blue},
+		{Number: 13, Color: ColorEnum.Yellow},
+
+		// Kalan taşlar
+		{Number: 2, Color: ColorEnum.Yellow},
+		{Number: 6, Color: ColorEnum.Blue},
+	}
+
+	opened := [][]*Model.Tile{
+		/*// Per 1'ler
+		{{Number: 1, Color: ColorEnum.Red}, {Number: 1, Color: ColorEnum.Blue}, {Number: 1, Color: ColorEnum.Yellow}},
+
+		// Seri 3,4,5 kırmızı
+		{{Number: 3, Color: ColorEnum.Red}, {Number: 4, Color: ColorEnum.Red}, {Number: 5, Color: ColorEnum.Red}},
+		*/
+		// Per 7'ler
+		{{Number: 7, Color: ColorEnum.Yellow}, {Number: 7, Color: ColorEnum.Red}, {Number: 7, Color: ColorEnum.Blue}},
+
+		// Seri 8,9,10 siyah
+		{{Number: 8, Color: ColorEnum.Black}, {Number: 9, Color: ColorEnum.Black}, {Number: 10, Color: ColorEnum.Black}},
+
+		// Seri 10,11,12 kırmızı
+		{{Number: 10, Color: ColorEnum.Red}, {Number: 11, Color: ColorEnum.Red}, {Number: 12, Color: ColorEnum.Red}},
+
+		// Per 13'ler
+		{{Number: 13, Color: ColorEnum.Red}, {Number: 13, Color: ColorEnum.Blue}, {Number: 13, Color: ColorEnum.Yellow}},
+	}
+
+	remaining, score, ok := CanOpenTilesWithRemaining(tiles, opened)
+
+	if !ok {
+		t.Error("Expected to open tiles with score >= 101, but failed")
+	} else {
+		t.Logf("PASS CanOpenTilesWithRemaining_Valid: Score = %d, Remaining = %d tiles", score, len(remaining))
+		t.Log("Remaining tiles:")
+		for _, tile := range remaining {
+			t.Logf("Number: %d, Color: %v", tile.Number, GetEnumName(ColorEnum, tile.Color))
+		}
+	}
+}
