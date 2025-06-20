@@ -347,7 +347,7 @@ func CanOpenTilesWithRemaining(tiles []*Model.Tile, opened [][]*Model.Tile) (rem
 	}
 	var result = totalScore >= 101
 	//---------
-	//Acilan Tum Taslar Opened olur!
+	//Acilan Tum Taslar belirlendikten sonra geri kalanlar tanimlanir!
 	if result {
 		remainList = getRemainingInOpenedTiles(tiles, opened)
 	}
