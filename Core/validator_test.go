@@ -1263,3 +1263,112 @@ func TestCanOpenTilesWithRemaining_Valid(t *testing.T) {
 		}
 	}
 }
+
+func TestRedisLoadGameStateForPlayer(t *testing.T) {
+	client := GetRedisClient()
+	roomID := "room_test_123"
+	userID := "user_test_1"
+
+	// 1. Dummy veriler hazırlanır
+	room := Model.RoomState{
+		RoomID:        roomID,
+		GameID:        "game_001",
+		Indicator:     Model.Tile{Number: 5, Color: ColorEnum.Blue},
+		OkeyTile:      Model.Tile{Number: 6, Color: ColorEnum.Blue, IsOkey: true},
+		TileBag:       []Model.Tile{{Number: 1, Color: ColorEnum.Red}},
+		CurrentTurn:   userID,
+		TurnStartTime: time.Now().UnixMilli(),
+		CreatedAt:     time.Now().UnixMilli(),
+		GamePhase:     "in_progress",
+		WinnerID:      "",
+		Players: []Model.PlayerBasicInfo{
+			{UserID: userID, UserName: "TestUser1"},
+			{UserID: "user_test_2", UserName: "TestUser2"},
+		},
+	}
+
+	private := Model.PlayerPrivateState{
+		RoomID:      roomID,
+		GameID:      "game_001",
+		UserID:      userID,
+		UserName:    "TestUser1",
+		PlayerTiles: []Model.Tile{{Number: 3, Color: ColorEnum.Red}, {Number: 4, Color: ColorEnum.Red}},
+	}
+
+	public1 := Model.PlayerPublicState{
+		UserID:       userID,
+		UserName:     "TestUser1",
+		DiscardTiles: []Model.Tile{{Number: 9, Color: ColorEnum.Yellow}},
+		OpenedGroups: nil,
+		Score:        0,
+		IsConnected:  true,
+		IsFinished:   false,
+		LastDrawTile: nil,
+	}
+
+	public2 := Model.PlayerPublicState{
+		UserID:       "user_test_2",
+		UserName:     "TestUser2",
+		DiscardTiles: []Model.Tile{{Number: 8, Color: ColorEnum.Black}},
+		OpenedGroups: nil,
+		Score:        0,
+		IsConnected:  true,
+		IsFinished:   false,
+		LastDrawTile: nil,
+	}
+
+	// 2. Redis'e veriler yazılır
+	if err := client.SetKey(GenerateRoomStateRedisKey(roomID), room, 30*time.Minute); err != nil {
+		t.Fatal("Room state Redis'e yazılamadı:", err)
+	}
+	if err := client.SetKey(GeneratePlayerPrivateStateRedisKey(roomID, userID), private, 30*time.Minute); err != nil {
+		t.Fatal("Private state Redis'e yazılamadı:", err)
+	}
+	if err := client.SetKey(GeneratePlayerPublicStateRedisKey(roomID, userID), public1, 30*time.Minute); err != nil {
+		t.Fatal("Public state (1) Redis'e yazılamadı:", err)
+	}
+	if err := client.SetKey(GeneratePlayerPublicStateRedisKey(roomID, "user_test_2"), public2, 30*time.Minute); err != nil {
+		t.Fatal("Public state (2) Redis'e yazılamadı:", err)
+	}
+
+	//Wait 5 seconds
+	//time.Sleep(5 * time.Second)
+
+	// 3. Fonksiyon test edilir
+	loadedRoom, loadedPrivate, loadedPublics, err := LoadGameForPlayer(roomID, userID)
+	if err != nil {
+		t.Fatal("LoadGameForPlayer başarısız:", err)
+	}
+
+	// 4. Veriler doğrulanır
+	if loadedRoom.RoomID != roomID {
+		t.Error("RoomID eşleşmiyor")
+	}
+	if loadedPrivate.UserID != userID || loadedPrivate.UserName != "TestUser1" {
+		t.Error("Private state hatalı")
+	}
+	if len(loadedPublics) != 2 {
+		t.Errorf("Beklenen public state sayısı 2, gelen: %d", len(loadedPublics))
+	}
+
+	found := false
+	for _, pub := range loadedPublics {
+		if pub.UserID == "user_test_2" && pub.UserName == "TestUser2" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("Public state içinde user_test_2 bulunamadı")
+	}
+
+	//Player 1 Elapsed Time
+	elapsed := (time.Now().UnixMilli() - room.TurnStartTime) / 1000
+	if elapsed > 30 {
+		// oyuncunun süresi doldu
+		fmt.Println("Player1 Elapsed Time Already Finished: ", elapsed)
+	} else {
+		fmt.Println("Player1 Elapsed Time: ", elapsed)
+	}
+
+	t.Log("PASS: LoadGameForPlayer doğru şekilde çalıştı")
+}
