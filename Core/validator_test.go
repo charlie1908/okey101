@@ -1372,3 +1372,44 @@ func TestRedisLoadGameStateForPlayer(t *testing.T) {
 
 	t.Log("PASS: LoadGameForPlayer doğru şekilde çalıştı")
 }
+
+func TestGetEffectiveNumber_OkeyWithSequenceEndAt13(t *testing.T) {
+	// Grup: 11 (Mavi), 12 (Mavi), 13 (Mavi) + 1 Okey taşı
+	group := []*Model.Tile{
+		{Number: 11, Color: ColorEnum.Blue},
+		{Number: 12, Color: ColorEnum.Blue},
+		{Number: 13, Color: ColorEnum.Blue},
+		{Number: 5, Color: ColorEnum.Red, IsOkey: true}, // Okey taşı
+	}
+
+	okeyTile := group[len(group)-1] // Okey taşı referansı
+
+	// getEffectiveNumber fonksiyonunu çağırıyoruz
+	effectiveNumber := getEffectiveNumber(okeyTile, group)
+
+	expected := 10 // Sonraki sayı 14 değil, baştan 1 eksik sayı olarak 10 dönmeli
+
+	if effectiveNumber != expected {
+		t.Errorf("Beklenen Okey değeri %d, bulundu: %d", expected, effectiveNumber)
+	} else {
+		t.Logf("✅ Okey değeri doğru hesaplandı: %d", effectiveNumber)
+	}
+
+	// Okey taşını da dahil ederek grubu efektif değere göre sırala
+	sortedGroup := sortGroupByEffectiveNumber(group)
+
+	t.Log("Sıralı grup:")
+	for _, tile := range sortedGroup {
+		t.Logf("Number=%d, Color=%v, IsOkey=%v", tile.Number, tile.Color, tile.IsOkey)
+	}
+
+	// Ek olarak, isSequence kontrolü
+	nonOkeys := filterNonOkeys(group)
+	okeyCount := countOkeys(group)
+
+	if !isSequence(nonOkeys, okeyCount) {
+		t.Error("❌ Bu grup seri olarak tanımlanmalıydı ama isSequence false döndü.")
+	} else {
+		t.Log("✅ Seri doğru tanımlandı.")
+	}
+}

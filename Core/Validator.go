@@ -246,12 +246,13 @@ func CalculateTileScore(tile *Model.Tile, index int, tiles []*Model.Tile, isSequ
 	// Sequence durumu: Okey'in doğru değerini hesapla
 
 	// Okey olmayan taşları bul
-	nonOkeys := []Model.Tile{}
+	nonOkeys := filterNonOkeys(tiles)
+	/*nonOkeys := []Model.Tile{}
 	for _, t := range tiles {
 		if !t.IsOkey {
 			nonOkeys = append(nonOkeys, *t)
 		}
-	}
+	}*/
 
 	if len(nonOkeys) == 0 {
 		return 1 // Sadece okey varsa 1 dönebiliriz
@@ -1145,6 +1146,10 @@ func getEffectiveNumber(tile *Model.Tile, group []*Model.Tile) int {
 					return expected // eksik olan burası
 				}
 				expected++
+			}
+			//Bunu araya giren sayi olamdigi ve sonda 13 oldugu durumlar icin [22.06.2025]'de ekledim! Sonucta 14 diye bir sayi yok. O yuzden basa koyduk :)
+			if expected > 13 {
+				return nums[0] - 1
 			}
 			return expected // Son eksik olan sayı
 		}
