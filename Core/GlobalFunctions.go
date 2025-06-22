@@ -236,6 +236,7 @@ func (tiles *TileBag) TakeOneFromBag(player *[]Model.Tile) Model.Tile {
 		log.Fatal("TileBag contains no valid (non-Joker) tiles for indicator selection")
 	}
 	var tile = (*tiles)[0]
+	*tiles = (*tiles)[1:]
 	*player = append(*player, tile)
 	return tile
 }
