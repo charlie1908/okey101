@@ -961,7 +961,12 @@ func SplitTilesByValidGroupsOrRuns(tiles []*Model.Tile) ([][]*Model.Tile, []*Mod
 
 	var allGroups []candidate
 
-	for size := 3; size <= n; size++ {
+	maxGroupSize := 5 // Performans sınırlaması
+	if n < maxGroupSize {
+		maxGroupSize = n
+	}
+	for size := 3; size <= maxGroupSize; size++ {
+		//for size := 3; size <= n; size++ {
 		indices := make([]int, size)
 		var generate func(start, depth int)
 		generate = func(start, depth int) {
