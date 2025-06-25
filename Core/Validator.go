@@ -346,7 +346,8 @@ func CanOpenTilesWithRemaining(tiles []*Model.Tile, opened [][]*Model.Tile) (rem
 			totalScore += CalculateTileScore(tile, index, group, isSeq)
 		}
 	}
-	var result = totalScore >= 101
+	//var result = totalScore >= 101
+	var result = totalScore > 0
 	//---------
 	//Acilan Tum Taslar belirlendikten sonra geri kalanlar tanimlanir!
 	if result {
@@ -444,11 +445,16 @@ func HasAtLeastFivePairs(opened [][]*Model.Tile) bool {
 				return false
 			}
 
+			// Eğer ikisi de sahte okeyse, bu çift geçersizdir
+			if tile1.IsJoker && tile2.IsJoker {
+				return false
+			}
+
 			// Okey olan taşların değerini bulmak için CalculateTileScore kullanıyoruz
 			score1 := CalculateTileScore(tile1, 0, group, false)
 			score2 := CalculateTileScore(tile2, 1, group, false)
 
-			// Aynı sayı mı?
+			// Aynı sayı mı? Eğer ikisi de sahte okeyse, bu çift geçersizdir.
 			if score1 == score2 {
 				// Aynı renk mi ya da okey (joker) taşı var mı?
 				// Eğer ikisi de okey ise kabul edilir.
@@ -480,11 +486,16 @@ func HasAtLeastFivePairsForSetNewPair(opened [][]*Model.Tile) bool {
 		if len(group) == 2 {
 			tile1, tile2 := group[0], group[1]
 
+			// Eğer ikisi de sahte okeyse, bu çift geçersizdir
+			if tile1.IsJoker && tile2.IsJoker {
+				return false
+			}
+
 			// Okey olan taşların değerini bulmak için CalculateTileScore kullanıyoruz
 			score1 := CalculateTileScore(tile1, 0, group, false)
 			score2 := CalculateTileScore(tile2, 1, group, false)
 
-			// Aynı sayı mı?
+			// Aynı sayı mı? Eğer ikisi de sahte okeyse, bu çift geçersizdir.
 			if score1 == score2 {
 				// Aynı renk mi ya da okey (joker) taşı var mı?
 				// Eğer ikisi de okey ise kabul edilir.
@@ -544,6 +555,11 @@ func IsValidPair(tiles []*Model.Tile) bool {
 	}
 
 	tile1, tile2 := tiles[0], tiles[1]
+
+	// Eğer ikisi de sahte okeyse, bu çift geçersizdir
+	if tile1.IsJoker && tile2.IsJoker {
+		return false
+	}
 
 	score1 := CalculateTileScore(tile1, 0, tiles, false)
 	score2 := CalculateTileScore(tile2, 1, tiles, false)
@@ -937,8 +953,17 @@ func SplitTilesByValidGroupsOrRuns_XX(tiles []*Model.Tile) ([][]*Model.Tile, []*
 	return bestCombination, remaining
 }
 
-func SplitTilesByValidGroupsOrRuns(tiles []*Model.Tile) ([][]*Model.Tile, []*Model.Tile) {
+func SplitTilesByValidGroupsOrRuns(tiles []*Model.Tile, maxGroupSizeOptional ...int) ([][]*Model.Tile, []*Model.Tile, int) {
 	n := len(tiles)
+
+	// Varsayılan maksimum grup büyüklüğü: 5
+	maxGroupSize := 5
+	if len(maxGroupSizeOptional) > 0 && maxGroupSizeOptional[0] > 0 {
+		maxGroupSize = maxGroupSizeOptional[0]
+	}
+	if n < maxGroupSize {
+		maxGroupSize = n
+	}
 
 	// Renk ve Sayıya göre sırala => Renge gore grupla ve sirala sonra Sayiya gore sirala
 	sort.Slice(tiles, func(i, j int) bool {
@@ -961,10 +986,6 @@ func SplitTilesByValidGroupsOrRuns(tiles []*Model.Tile) ([][]*Model.Tile, []*Mod
 
 	var allGroups []candidate
 
-	maxGroupSize := 5 // Performans sınırlaması
-	if n < maxGroupSize {
-		maxGroupSize = n
-	}
 	for size := 3; size <= maxGroupSize; size++ {
 		//for size := 3; size <= n; size++ {
 		indices := make([]int, size)
@@ -1089,7 +1110,7 @@ func SplitTilesByValidGroupsOrRuns(tiles []*Model.Tile) ([][]*Model.Tile, []*Mod
 		bestCombination[i] = sortGroupByEffectiveNumber(g)
 	}
 
-	return bestCombination, remaining
+	return bestCombination, remaining, maxScore
 }
 
 func deepCopyGroups(groups [][]*Model.Tile) [][]*Model.Tile {

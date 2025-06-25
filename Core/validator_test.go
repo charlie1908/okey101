@@ -340,6 +340,22 @@ func TestHasAtLeastFivePairs_Valid(t *testing.T) {
 	}
 }
 
+func TestHasAtLeastFivePairs_Invalid_DoubleJoker(t *testing.T) {
+	opened := [][]*Model.Tile{
+		{{Number: 8, Color: ColorEnum.Yellow, IsJoker: true}, {Number: 8, Color: ColorEnum.Yellow, IsJoker: true}}, // Sahte okey çifti
+		{{Number: 3, Color: ColorEnum.Red}, {Number: 3, Color: ColorEnum.Red}},                                     // Çift 1
+		{{Number: 7, Color: ColorEnum.Yellow}, {Number: 7, Color: ColorEnum.Yellow}},                               // Çift 2
+		{{Number: 12, Color: ColorEnum.Blue}, {Number: 12, Color: ColorEnum.Blue}},                                 // Çift 3
+		{{Number: 5, Color: ColorEnum.Red}, {Number: 5, Color: ColorEnum.Red}},                                     // Çift 4
+	}
+
+	if HasAtLeastFivePairs(opened) {
+		t.Error("Expected false: two jokers should not form a valid pair")
+	} else {
+		t.Log("PASS: Double joker pair correctly rejected")
+	}
+}
+
 func TestHasAtLeastFivePairsIsOpened_Invalid(t *testing.T) {
 	opened := [][]*Model.Tile{
 		{{Number: 3, Color: ColorEnum.Red}, {Number: 3, Color: ColorEnum.Red, IsOpend: true}}, // Biri onceden acilmis
@@ -692,10 +708,10 @@ func TestValidGroupAndRunWithNoJokers(t *testing.T) {
 		{Number: 13, Color: ColorEnum.Red},   // remaining
 	}
 
-	validGroups, remaining := SplitTilesByValidGroupsOrRuns(tiles)
+	validGroups, remaining, maxScore := SplitTilesByValidGroupsOrRuns(tiles)
 
 	totalSum := sumAllGroupsNumbers(validGroups)
-	fmt.Printf("Valid groups toplam sayısı: %d\n", totalSum)
+	fmt.Printf("Valid groups toplam sayısı: %d\n MaxScore: %d\n", totalSum, maxScore)
 
 	foundGroup := false
 	foundRun := false
@@ -744,10 +760,10 @@ func TestValidGroupAndRunWithOkeysAndJokers(t *testing.T) {
 		{Number: 1, Color: ColorEnum.Yellow},              // Remaining
 	}
 
-	validGroups, remaining := SplitTilesByValidGroupsOrRuns(tiles)
+	validGroups, remaining, maxScore := SplitTilesByValidGroupsOrRuns(tiles)
 
 	totalSum := sumAllGroupsNumbers(validGroups)
-	fmt.Printf("Valid groups toplam sayısı: %d\n", totalSum)
+	fmt.Printf("Valid groups toplam sayısı: %d\n MaxScore: %d\n", totalSum, maxScore)
 
 	foundGroup := false
 	foundRun := false
@@ -803,10 +819,10 @@ func TestSplitTilesWithOkeyAndJokerInGroupsAndSequences(t *testing.T) {
 		{Number: 10, Color: ColorEnum.Blue, IsJoker: true},
 	}
 
-	validGroups, remaining := SplitTilesByValidGroupsOrRuns(tiles)
+	validGroups, remaining, maxScore := SplitTilesByValidGroupsOrRuns(tiles)
 
 	totalSum := sumAllGroupsNumbers(validGroups)
-	fmt.Printf("Valid groups toplam sayısı: %d\n", totalSum)
+	fmt.Printf("Valid groups toplam sayısı: %d\n MaxScore: %d\n", totalSum, maxScore)
 
 	foundGroup := false
 	foundSequence := false
@@ -865,10 +881,10 @@ func TestSplitTilesWithOkeyAndJokerInOneSquenceAndNoGroup(t *testing.T) {
 		{Number: 6, Color: ColorEnum.Yellow},
 	}
 
-	validGroups, remaining := SplitTilesByValidGroupsOrRuns(tiles)
+	validGroups, remaining, maxScore := SplitTilesByValidGroupsOrRuns(tiles)
 
 	totalSum := sumAllGroupsNumbers(validGroups)
-	fmt.Printf("Valid groups toplam sayısı: %d\n", totalSum)
+	fmt.Printf("Valid groups toplam sayısı: %d\n MaxScore: %d\n", totalSum, maxScore)
 
 	foundGroup := false
 	foundSequence := false
@@ -930,10 +946,10 @@ func TestSplitTilesWithOkeyAndJokerInOneSquenceAndOneGroup2(t *testing.T) {
 		{Number: 2, Color: ColorEnum.Yellow},
 	}
 
-	validGroups, remaining := SplitTilesByValidGroupsOrRuns(tiles)
+	validGroups, remaining, maxScore := SplitTilesByValidGroupsOrRuns(tiles)
 
 	totalSum := sumAllGroupsNumbers(validGroups)
-	fmt.Printf("Valid groups toplam sayısı: %d\n", totalSum)
+	fmt.Printf("Valid groups toplam sayısı: %d\n MaxScore: %d\n", totalSum, maxScore)
 
 	foundGroup := false
 	foundSequence := false
@@ -998,7 +1014,7 @@ func TestSplitTilesWithOkeyAndJokerInOneSequenceAndNoGroup(t *testing.T) {
 	}
 
 	// Geçerli kombinasyonları bul
-	validGroups, remaining := SplitTilesByValidGroupsOrRuns(tiles)
+	validGroups, remaining, maxScore := SplitTilesByValidGroupsOrRuns(tiles)
 
 	// Grup ve seri kontrolü
 	foundGroup := false
@@ -1006,7 +1022,8 @@ func TestSplitTilesWithOkeyAndJokerInOneSequenceAndNoGroup(t *testing.T) {
 
 	// Kombinasyonların sayı toplamı
 	totalSum := sumAllGroupsNumbers(validGroups)
-	t.Logf("🧮 Geçerli grupların toplam sayı değeri: %d", totalSum)
+	//t.Logf("🧮 Geçerli grupların toplam sayı değeri: %d", totalSum)
+	t.Logf("🧮 Geçerli grupların toplam sayı değeri: %d MaxScore: %d", totalSum, maxScore)
 
 	// Her kombinasyonu incele
 	for _, group := range validGroups {
