@@ -362,6 +362,41 @@ func CanOpenTilesWithRemaining(tiles []*Model.Tile, opened [][]*Model.Tile) (rem
 	return remainList, totalScore, result
 }
 
+func CanOpenTilesWithRemainingWithAllGroups(groups [][]*Model.Tile) (opened [][]*Model.Tile, remaining [][]*Model.Tile, score int, error bool) {
+	totalScore := 0
+	var remainList [][]*Model.Tile
+	var openedList [][]*Model.Tile
+	for _, group := range groups {
+
+		//Iclerinden Acilan Tas var Ise Hata Verir..
+		if HasOpenTail(group...) {
+			return openedList, remainList, 0, false
+		}
+
+		//Once gecerliligi kontrol et! Gecerli değil ise Remainingdir.
+		if !IsValidGroupOrRun(group) {
+			remainList = append(remainList, group)
+		} else {
+			openedList = append(openedList, group)
+			isSeq := isSequence(filterNonOkeys(group), countOkeys(group))
+			for index, tile := range group {
+				totalScore += CalculateTileScore(tile, index, group, isSeq)
+			}
+		}
+	}
+	//var result = totalScore >= 101
+	var result = totalScore > 0
+	//---------
+
+	//Bayramin istegi ile kaldirildi.
+	//Acilan Tum Taslar Opened olur!
+	/*if result {
+		SetOpentiles(opened)
+	}*/
+	//---------
+	return openedList, remainList, totalScore, result
+}
+
 func getRemainingInOpenedTiles(tiles []*Model.Tile, opened [][]*Model.Tile) (remaining []*Model.Tile) {
 	type pairKey struct {
 		Color  int

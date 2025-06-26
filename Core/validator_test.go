@@ -1281,6 +1281,112 @@ func TestCanOpenTilesWithRemaining_Valid(t *testing.T) {
 	}
 }
 
+func Test_CanOpenTilesWithRemainingWithAllGroups_MixedTypesAndLengths(t *testing.T) {
+	group1 := []*Model.Tile{
+		{Color: ColorEnum.Red, Number: 5},
+		{Color: ColorEnum.Blue, Number: 5},
+		{Color: ColorEnum.Black, Number: 5},
+	}
+
+	group2 := []*Model.Tile{
+		{Color: ColorEnum.Yellow, Number: 9},
+		{Color: ColorEnum.Red, Number: 9},
+		{Color: ColorEnum.Black, Number: 9},
+	}
+
+	group3 := []*Model.Tile{
+		{Color: ColorEnum.Blue, Number: 1},
+		{Color: ColorEnum.Blue, Number: 2},
+		{Color: ColorEnum.Blue, Number: 3},
+	}
+
+	group4 := []*Model.Tile{
+		{Color: ColorEnum.Yellow, Number: 10},
+		{Color: ColorEnum.Yellow, Number: 11},
+		{Color: ColorEnum.Yellow, Number: 12},
+		{Color: ColorEnum.Yellow, Number: 13},
+	}
+
+	invalidGroup := []*Model.Tile{
+		{Color: ColorEnum.Red, Number: 6},
+		{Color: ColorEnum.Blue, Number: 11},
+		{Color: ColorEnum.Yellow, Number: 2},
+		{Color: ColorEnum.Black, Number: 1},
+	}
+
+	invalidGroup2 := []*Model.Tile{
+		{Color: ColorEnum.Red, Number: 3},
+		{Color: ColorEnum.Blue, Number: 5},
+		{Color: ColorEnum.Yellow, Number: 7},
+		{Color: ColorEnum.Black, Number: 8},
+	}
+
+	allGroups := [][]*Model.Tile{
+		group1, group2, group3, group4, invalidGroup, invalidGroup2,
+	}
+
+	openedGroups, remainingGroups, score, ok := CanOpenTilesWithRemainingWithAllGroups(allGroups)
+
+	if !ok {
+		t.Error("Expected ok == true, got false")
+	} else {
+		t.Log("PASS ok == true")
+	}
+
+	// Açılan grup sayısı 4 olmalı
+	if len(openedGroups) != 4 {
+		t.Errorf("Expected 4 opened groups, got %d", len(openedGroups))
+	} else {
+		t.Log("PASS opened groups count == 4")
+	}
+
+	// Açılan taş sayısı toplamı 13 olmalı
+	totalOpenedTiles := 0
+	for _, grp := range openedGroups {
+		totalOpenedTiles += len(grp)
+	}
+	if totalOpenedTiles != 13 {
+		t.Errorf("Expected total opened tiles 13, got %d", totalOpenedTiles)
+	} else {
+		t.Log("PASS total opened tiles == 13")
+	}
+
+	// Remaining grup sayısı 1 olmalı
+	if len(remainingGroups) != 1 {
+		t.Errorf("Expected 1 remaining group, got %d", len(remainingGroups))
+	} else {
+		t.Log("PASS remaining groups count == 1")
+	}
+
+	// Remaining grupundeki taş sayısı 8 olmalı
+	if len(remainingGroups[0]) != 8 {
+		t.Errorf("Expected remaining group size 8, got %d", len(remainingGroups[0]))
+	} else {
+		t.Log("PASS remaining group size == 8")
+	}
+
+	// Skor > 0 olmalı
+	if score <= 0 {
+		t.Errorf("Expected score > 0, got %d", score)
+	} else {
+		t.Logf("PASS score > 0 (%d)", score)
+	}
+
+	// remaining içinde invalidGroup'un ilk taşı var mı kontrolü
+	found := false
+	for _, tile := range remainingGroups[0] {
+		if tile == invalidGroup[0] {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("Expected remaining group to contain tiles from invalidGroup")
+	} else {
+		t.Log("PASS remaining group contains invalidGroup tiles")
+	}
+}
+
 func TestRedisLoadGameStateForPlayer(t *testing.T) {
 	client := GetRedisClient()
 	roomID := "room_test_123"
