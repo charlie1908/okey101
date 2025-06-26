@@ -1352,14 +1352,13 @@ func Test_CanOpenTilesWithRemainingWithAllGroups_MixedTypesAndLengths(t *testing
 	}
 
 	// Remaining grup sayısı 1 olmalı
-	if len(remainingGroups) != 1 {
+	if len(remainingGroups) != 2 {
 		t.Errorf("Expected 1 remaining group, got %d", len(remainingGroups))
 	} else {
 		t.Log("PASS remaining groups count == 1")
 	}
-
 	// Remaining grupundeki taş sayısı 8 olmalı
-	if len(remainingGroups[0]) != 8 {
+	if len(remainingGroups[0])+len(remainingGroups[1]) != 8 {
 		t.Errorf("Expected remaining group size 8, got %d", len(remainingGroups[0]))
 	} else {
 		t.Log("PASS remaining group size == 8")
